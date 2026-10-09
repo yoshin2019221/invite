@@ -168,5 +168,15 @@
       "title": "Deleting your data",
       "body": "Open your private edit link and choose Delete this invite. The invite, all replies and the photo are removed permanently."
     }
+  },
+  "NotFound": {
+    "heading": "We could not find this invite",
+    "body": "The link may be incomplete, or the host may have removed the invite. Please ask them to send it again.",
+    "home": "Go to home"
+  },
+  "Error": {
+    "heading": "Something went wrong",
+    "body": "Please try again in a moment.",
+    "retry": "Try again"
   }
 }
