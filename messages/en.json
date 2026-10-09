@@ -1,0 +1,172 @@
+{
+  "Brand": {
+    "name": "GharInvite"
+  },
+  "Home": {
+    "headline": "Invite the whole family. Know who is really coming.",
+    "subline": "Make a beautiful invitation in minutes, send one WhatsApp link, and see every household's headcount.",
+    "cta": "Create free invite",
+    "note": "No app for guests • Works on WhatsApp • Hindi + English",
+    "privacy": "Privacy"
+  },
+  "Language": {
+    "switchTo": "हिन्दी",
+    "label": "Language"
+  },
+  "Occasions": {
+    "birthday": "Birthday",
+    "housewarming": "Housewarming",
+    "pooja": "Pooja",
+    "baby": "Baby celebration",
+    "party": "Party"
+  },
+  "Create": {
+    "heading": "Create your invite",
+    "occasionHeading": "What are we celebrating?",
+    "detailsHeading": "Tell us the details",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Create invite",
+    "creating": "Creating…",
+    "fields": {
+      "title": "Invite title",
+      "hostNames": "Hosted by",
+      "date": "Date",
+      "time": "Time",
+      "venueName": "Venue name",
+      "address": "Address",
+      "mapUrl": "Google Maps link (optional)",
+      "message": "Message for guests",
+      "photo": "Add a photo (optional)",
+      "photoChange": "Change photo",
+      "photoWorking": "Preparing photo…"
+    },
+    "hints": {
+      "title": {
+        "birthday": "Aarav's 5th birthday",
+        "housewarming": "Griha Pravesh",
+        "pooja": "Satyanarayan Pooja",
+        "baby": "Naming ceremony",
+        "party": "Family get-together"
+      },
+      "hostNames": "The Sharma family",
+      "message": "We would be delighted to have you with us."
+    },
+    "errors": {
+      "required": "Please fill in the marked fields.",
+      "generic": "Something went wrong. Please try again.",
+      "photo": "Could not upload the photo. You can continue without it."
+    },
+    "draftRestored": "We restored your unfinished invite.",
+    "themeHeading": "Choose a look"
+  },
+  "Created": {
+    "heading": "Your invite is ready",
+    "guestLink": "Link to send to guests",
+    "editLink": "Your private edit link",
+    "editWarn": "Save this link. It is the only way to change this invite without signing in.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "whatsapp": "Share on WhatsApp",
+    "view": "View invite",
+    "shareText": "You are invited: {title}"
+  },
+  "Guest": {
+    "hostedBy": "Hosted by {names}",
+    "when": "When",
+    "where": "Where",
+    "openMap": "Open in Google Maps",
+    "rsvpSoon": "RSVP opens soon",
+    "addToCalendar": "Add to calendar",
+    "googleCalendar": "Google Calendar",
+    "forward": "Forward to family on WhatsApp",
+    "forwardText": "You are invited: {title}"
+  },
+  "Edit": {
+    "heading": "Manage your invite",
+    "intro": "Keep this page's link private. Anyone who has it can manage this invite.",
+    "viewInvite": "View invite as guests see it",
+    "guestLink": "Link for guests",
+    "copy": "Copy",
+    "copied": "Copied",
+    "guestsHeading": "Replies so far",
+    "totalComing": "people coming",
+    "totalMaybe": "maybe",
+    "totalNo": "cannot come",
+    "noReplies": "No replies yet. Share your invite link on WhatsApp.",
+    "refresh": "Refresh",
+    "rowComing": "{count, plural, one {# person} other {# people}}",
+    "rowMaybe": "Maybe",
+    "rowNo": "Cannot come",
+    "shareHeading": "Send to guests",
+    "sendInvite": "Send invite on WhatsApp",
+    "sendReminder": "Send a reminder",
+    "reminderText": "Reminder: {title} on {when}. Please tell us if you are coming:",
+    "editHeading": "Change invite details",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Saved. Guests will see the new details within a minute.",
+    "previewNote": "WhatsApp may keep showing the old preview card for links already sent.",
+    "delete": "Delete this invite",
+    "deleteConfirm": "This permanently deletes the invite, all replies and the photo. This cannot be undone.",
+    "deleteYes": "Yes, delete everything",
+    "deleteNo": "Keep it",
+    "deleteFailed": "Could not delete. Please try again.",
+    "printCard": "Print a card with QR code"
+  },
+  "Themes": {
+    "haldi": "Haldi",
+    "mehendi": "Mehendi",
+    "neel": "Neel",
+    "gulab": "Gulab"
+  },
+  "Rsvp": {
+    "heading": "Will you come?",
+    "name": "Your name or family name",
+    "namePlaceholder": "Sharma family",
+    "status": {
+      "coming": "Yes, we will come",
+      "maybe": "Maybe",
+      "not_coming": "Sorry, we cannot come"
+    },
+    "headcount": "How many people are coming?",
+    "note": "Note for the host (optional)",
+    "submit": "Send reply",
+    "sending": "Sending…",
+    "thanksHeading": "Thank you!",
+    "thanksComing": "{name}, we have you down for {count, plural, one {# person} other {# people}}.",
+    "thanksMaybe": "{name}, we have noted that you may come.",
+    "thanksNo": "{name}, we will miss you. Thank you for letting us know.",
+    "change": "Change my reply",
+    "errors": {
+      "required": "Please add your name and choose one option.",
+      "generic": "Something went wrong. Please try again.",
+      "tooMany": "Too many tries. Please wait a minute."
+    }
+  },
+  "Print": {
+    "qrLabel": "QR code for the invite",
+    "scan": "Scan with your phone camera to open the invite and reply",
+    "print": "Print"
+  },
+  "Privacy": {
+    "heading": "Privacy",
+    "home": "Back to home",
+    "collect": {
+      "title": "What we collect",
+      "body": "For an invite: the details you type (title, names, date, place, message) and an optional photo. For a reply: the name, answer, headcount and note the guest types. We do not ask guests for a phone number, email or login."
+    },
+    "use": {
+      "title": "How we use it",
+      "body": "Only to show the invite to the people you share the link with, and to show you the replies. We do not sell data or show ads."
+    },
+    "share": {
+      "title": "Who can see it",
+      "body": "Anyone with the invite link can see the invite. Only the person with your private edit link can see replies. Invite pages are hidden from search engines."
+    },
+    "delete": {
+      "title": "Deleting your data",
+      "body": "Open your private edit link and choose Delete this invite. The invite, all replies and the photo are removed permanently."
+    }
+  }
+}
