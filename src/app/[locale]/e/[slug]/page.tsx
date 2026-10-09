@@ -125,6 +125,12 @@ export default async function GuestInvitePage({
           <h1 className="font-display text-5xl leading-tight text-maroon">{event.title}</h1>
           <p className="text-xl text-ink-soft">{t("hostedBy", { names: event.host_names })}</p>
           <span aria-hidden className="mt-1 block h-[3px] w-24 bg-saffron" />
+          <a
+            href="#rsvp"
+            className="mt-2 rounded-lg bg-maroon px-8 py-3 text-xl font-semibold text-paper active:scale-95"
+          >
+            {t("replyNow")}
+          </a>
         </header>
 
         <section className="flex flex-col items-center gap-1 text-center">

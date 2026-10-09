@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { isLocale } from "@/i18n/routing";
-import { absoluteUrl, formatDateOnly, formatTimeOnly, getPublicEvent } from "@/lib/events";
+import { formatDateOnly, formatTimeOnly, getPublicEvent, requestUrl } from "@/lib/events";
 import { themeOf } from "@/lib/themes";
 import PrintButton from "./PrintButton";
 
@@ -24,7 +24,7 @@ export default async function PrintPage({
 
   const t = await getTranslations("Print");
   const guest = await getTranslations("Guest");
-  const url = absoluteUrl(`/${locale}/e/${slug}`);
+  const url = await requestUrl(`/${locale}/e/${slug}`);
   const svg = await QRCode.toString(url, { type: "svg", margin: 1, width: 240 });
 
   return (

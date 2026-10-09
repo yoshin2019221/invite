@@ -80,7 +80,8 @@
     "addToCalendar": "Add to calendar",
     "googleCalendar": "Google Calendar",
     "forward": "Forward to family on WhatsApp",
-    "forwardText": "You are invited: {title}"
+    "forwardText": "You are invited: {title}",
+    "replyNow": "Reply to the invite"
   },
   "Edit": {
     "heading": "Manage your invite",
@@ -198,6 +199,8 @@
     "copyLink": "Copy link",
     "copied": "Copied",
     "inviteText": "{name}, you are invited: {title}",
-    "remindText": "{name}, a gentle reminder: {title} on {when}. Please tell us if you can come:"
+    "remindText": "{name}, a gentle reminder: {title} on {when}. Please tell us if you can come:",
+    "remove": "Remove",
+    "removeConfirm": "Remove this household and its reply?"
   }
 }

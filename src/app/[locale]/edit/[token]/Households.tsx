@@ -51,6 +51,17 @@ export default function Households({
     }
   }
 
+  async function remove(id: string) {
+    if (!window.confirm(t("removeConfirm"))) return;
+    try {
+      const res = await fetch(`/api/v1/edit/${token}/households/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("remove failed");
+      router.refresh();
+    } catch {
+      setError(true);
+    }
+  }
+
   const wa = (text: string, link: string) =>
     `https://wa.me/?text=${encodeURIComponent(`${text}\n${link}`)}`;
   const pending = rows.filter((r) => !r.status).length;
@@ -117,6 +128,13 @@ export default function Households({
                       {t("remind")}
                     </a>
                   )}
+                  <button
+                    type="button"
+                    className={`${small} border-red-800/40 text-red-800`}
+                    onClick={() => void remove(r.id)}
+                  >
+                    {t("remove")}
+                  </button>
                   <button
                     type="button"
                     className={small}

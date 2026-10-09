@@ -80,7 +80,8 @@
     "addToCalendar": "कैलेंडर में जोड़ें",
     "googleCalendar": "Google Calendar",
     "forward": "WhatsApp पर परिवार को भेजिए",
-    "forwardText": "आप आमंत्रित हैं: {title}"
+    "forwardText": "आप आमंत्रित हैं: {title}",
+    "replyNow": "जवाब दीजिए"
   },
   "Edit": {
     "heading": "अपना निमंत्रण सँभालिए",
@@ -198,6 +199,8 @@
     "copyLink": "लिंक कॉपी करें",
     "copied": "कॉपी हो गया",
     "inviteText": "{name}, आप आमंत्रित हैं: {title}",
-    "remindText": "{name}, याद दिला रहे हैं: {title}, {when}। कृपया बताइए कि आप आ पाएँगे या नहीं:"
+    "remindText": "{name}, याद दिला रहे हैं: {title}, {when}। कृपया बताइए कि आप आ पाएँगे या नहीं:",
+    "remove": "हटाएँ",
+    "removeConfirm": "इस परिवार और उसके जवाब को हटा दें?"
   }
 }

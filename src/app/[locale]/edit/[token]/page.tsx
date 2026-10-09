@@ -5,7 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { isLocale } from "@/i18n/routing";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { hashToken } from "@/lib/tokens";
-import { absoluteUrl, formatWhenShort, toLocalInputs } from "@/lib/events";
+import { formatWhenShort, requestUrl, toLocalInputs } from "@/lib/events";
 import { themeOf } from "@/lib/themes";
 import AutoRefresh from "./AutoRefresh";
 import DeleteInvite from "./DeleteInvite";
@@ -55,16 +55,16 @@ export default async function EditPage({
   const byHousehold = new Map(
     (replies ?? []).filter((r) => r.household_id).map((r) => [r.household_id as string, r]),
   );
-  const householdRows = (households ?? []).map((h) => {
+  const householdRows = await Promise.all((households ?? []).map(async (h) => {
     const r = byHousehold.get(h.id);
     return {
       id: h.id,
       name: h.name,
-      link: absoluteUrl(`/${locale}/e/${event.slug}?h=${h.link_token}`),
+      link: await requestUrl(`/${locale}/e/${event.slug}?h=${h.link_token}`),
       status: (r?.status ?? null) as "coming" | "maybe" | "not_coming" | null,
       headcount: r?.headcount ?? 0,
     };
-  });
+  }));
   const totals = Array.isArray(totalRows) ? totalRows[0] : totalRows;
   const coming = Number(totals?.coming_people ?? 0);
   const maybe = Number(totals?.maybe_households ?? 0);
@@ -72,7 +72,7 @@ export default async function EditPage({
 
   const t = await getTranslations("Edit");
   const guestT = await getTranslations("Guest");
-  const guestUrl = absoluteUrl(`/${locale}/e/${event.slug}`);
+  const guestUrl = await requestUrl(`/${locale}/e/${event.slug}`);
   const when = formatWhenShort(event.starts_at, event.timezone, locale);
   const local = toLocalInputs(event.starts_at, event.timezone);
 

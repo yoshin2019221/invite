@@ -1,4 +1,5 @@
 import "server-only";
+import { headers } from "next/headers";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 export type PublicEvent = {
@@ -81,9 +82,29 @@ export function eventVersion(event: Pick<PublicEvent, "updated_at">) {
   return String(new Date(event.updated_at).getTime());
 }
 
+// The public address of the site. On Vercel production it is the project's own domain, so a
+// wrong or placeholder NEXT_PUBLIC_SITE_URL cannot break links; elsewhere it comes from the env.
+export function siteOrigin() {
+  if (process.env.VERCEL_ENV === "production" && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  );
+}
+
 export function absoluteUrl(path: string) {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  return new URL(path, base).toString();
+  return new URL(path, siteOrigin()).toString();
+}
+
+// For pages rendered per request (host page, print card): the address the visitor used.
+export async function requestUrl(path: string) {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (!host) return absoluteUrl(path);
+  const proto = h.get("x-forwarded-proto") ?? (/^(localhost|127\.)/.test(host) ? "http" : "https");
+  return new URL(path, `${proto}://${host}`).toString();
 }
 
 // "2026-11-14" and "18:30" in the event's own timezone, for <input type="date|time">.

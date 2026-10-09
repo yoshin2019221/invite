@@ -12,6 +12,8 @@ export const hindiDisplay = localFont({
   variable: "--nf-display-hi",
   weight: "400",
   display: "swap",
+  // No generated Arial fallback: it would catch Latin letters and digits before Fraunces does.
+  adjustFontFallback: false,
 });
 
 export const bodyLatin = localFont({
@@ -32,4 +34,5 @@ export const bodyDevanagari = localFont({
   ],
   variable: "--nf-body-hi",
   display: "swap",
+  adjustFontFallback: false,
 });

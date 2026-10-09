@@ -159,7 +159,7 @@ export default function RsvpForm({ slug }: { slug: string }) {
 
   if (saved && !editing) {
     return (
-      <section className={`${card} items-center text-center`} aria-live="polite">
+      <section id="rsvp" className={`${card} items-center text-center scroll-mt-4`} aria-live="polite">
         <h2 className="font-display text-3xl text-maroon">{t("thanksHeading")}</h2>
         <p className="text-xl text-ink">
           {saved.status === "coming" && t("thanksComing", { name: saved.guestName, count: saved.headcount })}
@@ -182,7 +182,8 @@ export default function RsvpForm({ slug }: { slug: string }) {
 
   return (
     <form
-      className={card}
+      id="rsvp"
+      className={`${card} scroll-mt-4`}
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
