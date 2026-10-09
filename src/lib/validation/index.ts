@@ -57,6 +57,7 @@ export const rsvpRequestSchema = rsvpFields
   .extend({
     deviceToken: z.string().regex(/^[A-Za-z0-9_-]{22,64}$/),
     turnstileToken: z.string().max(2048).optional(),
+    householdToken: z.string().regex(/^[A-Za-z0-9_-]{8,32}$/).optional(),
   })
   .refine(headcountRule, headcountIssue);
 
@@ -72,3 +73,7 @@ export const updateEventSchema = z.object({
   theme: z.enum(THEMES),
 });
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
+
+export const addHouseholdsSchema = z.object({
+  names: z.array(trimmed(80).min(1)).min(1).max(100),
+});

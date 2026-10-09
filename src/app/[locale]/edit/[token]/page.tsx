@@ -10,6 +10,7 @@ import { themeOf } from "@/lib/themes";
 import AutoRefresh from "./AutoRefresh";
 import DeleteInvite from "./DeleteInvite";
 import EditForm from "./EditForm";
+import Households from "./Households";
 import ShareButtons from "./ShareButtons";
 
 export const dynamic = "force-dynamic";
@@ -41,11 +42,29 @@ export default async function EditPage({
     db.rpc("event_totals", { p_event_id: event.id }),
     db
       .from("rsvps")
-      .select("id, guest_name, status, headcount, note, updated_at")
+      .select("id, guest_name, status, headcount, note, household_id, updated_at")
       .eq("event_id", event.id)
       .order("updated_at", { ascending: false })
       .limit(500),
   ]);
+  const { data: households } = await db
+    .from("households")
+    .select("id, name, link_token, created_at")
+    .eq("event_id", event.id)
+    .order("created_at", { ascending: true });
+  const byHousehold = new Map(
+    (replies ?? []).filter((r) => r.household_id).map((r) => [r.household_id as string, r]),
+  );
+  const householdRows = (households ?? []).map((h) => {
+    const r = byHousehold.get(h.id);
+    return {
+      id: h.id,
+      name: h.name,
+      link: absoluteUrl(`/${locale}/e/${event.slug}?h=${h.link_token}`),
+      status: (r?.status ?? null) as "coming" | "maybe" | "not_coming" | null,
+      headcount: r?.headcount ?? 0,
+    };
+  });
   const totals = Array.isArray(totalRows) ? totalRows[0] : totalRows;
   const coming = Number(totals?.coming_people ?? 0);
   const maybe = Number(totals?.maybe_households ?? 0);
@@ -103,6 +122,12 @@ export default async function EditPage({
           </div>
         </div>
         <AutoRefresh />
+        <a
+          href={`/api/v1/edit/${token}/export`}
+          className="self-start rounded-md border border-maroon/30 px-4 py-2 text-base text-maroon active:scale-95"
+        >
+          {t("exportCsv")}
+        </a>
         {!replies || replies.length === 0 ? (
           <p className="text-lg text-ink-soft">{t("noReplies")}</p>
         ) : (
@@ -123,6 +148,13 @@ export default async function EditPage({
           </ul>
         )}
       </section>
+
+      <Households
+        token={token}
+        title={event.title}
+        when={when}
+        rows={householdRows}
+      />
 
       <EditForm
         token={token}

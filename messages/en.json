@@ -112,7 +112,8 @@
     "deleteYes": "Yes, delete everything",
     "deleteNo": "Keep it",
     "deleteFailed": "Could not delete. Please try again.",
-    "printCard": "Print a card with QR code"
+    "printCard": "Print a card with QR code",
+    "exportCsv": "Download guest list (CSV)"
   },
   "Themes": {
     "haldi": "Haldi",
@@ -178,5 +179,25 @@
     "heading": "Something went wrong",
     "body": "Please try again in a moment.",
     "retry": "Try again"
+  },
+  "Households": {
+    "heading": "Personal links",
+    "intro": "Add the households you are inviting. Each gets its own link, so their name is filled in, you can see who has not replied, and they can change their reply from any phone.",
+    "namesLabel": "Household names (one per line)",
+    "namesPlaceholder": "Sharma family\\nVerma family\\nNani ji",
+    "add": "Add households",
+    "adding": "Adding…",
+    "error": "Could not add. Please try again.",
+    "pending": "{count, plural, =0 {Everyone has replied} one {# household has not replied} other {# households have not replied}}",
+    "coming": "{count, plural, one {# person} other {# people}}",
+    "maybe": "Maybe",
+    "no": "Cannot come",
+    "waiting": "No reply yet",
+    "sendInvite": "Send on WhatsApp",
+    "remind": "Remind",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "inviteText": "{name}, you are invited: {title}",
+    "remindText": "{name}, a gentle reminder: {title} on {when}. Please tell us if you can come:"
   }
 }

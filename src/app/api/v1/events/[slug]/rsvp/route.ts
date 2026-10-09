@@ -49,6 +49,18 @@ export async function POST(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
+  let householdId: string | null = null;
+  if (input.householdToken) {
+    const { data: household } = await db
+      .from("households")
+      .select("id")
+      .eq("event_id", event.id)
+      .eq("link_token", input.householdToken)
+      .maybeSingle();
+    if (!household) return NextResponse.json({ error: "invalid_link" }, { status: 404 });
+    householdId = household.id;
+  }
+
   const row = {
     guest_name: input.guestName,
     status: input.status,
@@ -58,12 +70,10 @@ export async function POST(
   const deviceHash = hashToken(input.deviceToken);
 
   async function update() {
-    return db
-      .from("rsvps")
-      .update(row)
-      .eq("event_id", event!.id)
-      .eq("device_token_hash", deviceHash)
-      .select("id");
+    const q = db.from("rsvps").update(row).eq("event_id", event!.id);
+    return (
+      householdId ? q.eq("household_id", householdId) : q.eq("device_token_hash", deviceHash)
+    ).select("id");
   }
 
   const first = await update();
@@ -83,7 +93,11 @@ export async function POST(
 
   const { error } = await db
     .from("rsvps")
-    .insert({ ...row, event_id: event.id, device_token_hash: deviceHash });
+    .insert(
+      householdId
+        ? { ...row, event_id: event.id, household_id: householdId }
+        : { ...row, event_id: event.id, device_token_hash: deviceHash },
+    );
   if (error) {
     if (error.code === "23505") {
       // Two taps at once: the other request inserted first, so change that one.

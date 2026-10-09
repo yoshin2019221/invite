@@ -39,11 +39,40 @@ export default function RsvpForm({ slug }: { slug: string }) {
   const [error, setError] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | undefined>();
+  const [hToken, setHToken] = useState<string | null>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
 
   // Restore this device's earlier reply (browser storage only exists on the client).
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
+    const h = new URLSearchParams(window.location.search).get("h");
+    if (h && /^[A-Za-z0-9_-]{8,32}$/.test(h)) {
+      // Personal link: the server knows this household's name and any earlier reply.
+      setHToken(h);
+      fetch(`/api/v1/events/${slug}/household?t=${encodeURIComponent(h)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { name: string; reply: { guest_name: string; status: Status; headcount: number; note: string | null } | null } | null) => {
+          if (d) {
+            setGuestName(d.reply?.guest_name ?? d.name);
+            if (d.reply) {
+              setStatus(d.reply.status);
+              setHeadcount(d.reply.headcount || 2);
+              setNote(d.reply.note ?? "");
+              setSaved({
+                deviceToken: "",
+                guestName: d.reply.guest_name,
+                status: d.reply.status,
+                headcount: d.reply.headcount,
+                note: d.reply.note ?? "",
+              });
+              setEditing(false);
+            }
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => setLoaded(true));
+      return;
+    }
     try {
       const raw = window.localStorage.getItem(key);
       if (raw) {
@@ -59,7 +88,7 @@ export default function RsvpForm({ slug }: { slug: string }) {
       // storage unavailable: show the empty form
     }
     setLoaded(true);
-  }, [key]);
+  }, [key, slug]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
@@ -88,7 +117,7 @@ export default function RsvpForm({ slug }: { slug: string }) {
     }
     setBusy(true);
     setError(null);
-    const deviceToken = saved?.deviceToken ?? newDeviceToken();
+    const deviceToken = saved?.deviceToken || newDeviceToken();
     const count = status === "not_coming" ? 0 : headcount;
     try {
       const res = await fetch(`/api/v1/events/${slug}/rsvp`, {
@@ -101,6 +130,7 @@ export default function RsvpForm({ slug }: { slug: string }) {
           note: note.trim() || undefined,
           deviceToken,
           turnstileToken,
+          householdToken: hToken ?? undefined,
         }),
       });
       if (res.status === 429) {
@@ -110,7 +140,7 @@ export default function RsvpForm({ slug }: { slug: string }) {
       if (!res.ok) throw new Error("rsvp failed");
       const next: Saved = { deviceToken, guestName: guestName.trim(), status, headcount: count, note: note.trim() };
       try {
-        window.localStorage.setItem(key, JSON.stringify(next));
+        if (!hToken) window.localStorage.setItem(key, JSON.stringify(next));
       } catch {
         // ignore: the reply is saved on the server either way
       }
