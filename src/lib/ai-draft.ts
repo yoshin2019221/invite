@@ -84,13 +84,22 @@ type Image = { mediaType: "image/jpeg" | "image/png" | "image/webp"; data: strin
 export class AiUnavailable extends Error {}
 
 export async function extractInvite(text: string, image?: Image): Promise<Extracted> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new AiUnavailable("no key");
+  // Anthropic first; if only an OpenAI key is set, use that instead. One of the two is enough.
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!anthropicKey && !openaiKey) throw new AiUnavailable("no key");
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const prompt = `Today (India): ${today}\n\nHost's description:\n${text || "(none, see the sample image)"}${image ? "\n\nThe attached image is a sample invite whose look they like. Use it for style, and read any details printed on it." : ""}`;
+  const input = anthropicKey ? await viaAnthropic(anthropicKey, prompt, image) : await viaOpenAI(openaiKey as string, prompt, image);
+  const parsed = extractedSchema.safeParse(input ?? {});
+  if (!parsed.success) throw new Error("bad model output");
+  return parsed.data;
+}
+
+async function viaAnthropic(key: string, prompt: string, image?: Image): Promise<unknown> {
   const content: unknown[] = [];
   if (image) content.push({ type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } });
-  content.push({ type: "text", text: `Today (India): ${today}\n\nHost's description:\n${text || "(none, see the sample image)"}${image ? "\n\nThe attached image is a sample invite whose look they like. Use it for style, and read any details printed on it." : ""}` });
-
+  content.push({ type: "text", text: prompt });
   const res = await fetch(`${process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"}/v1/messages`, {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -98,13 +107,37 @@ export async function extractInvite(text: string, image?: Image): Promise<Extrac
     signal: AbortSignal.timeout(25_000),
   });
   if (!res.ok) {
-    const detail = (await res.text().catch(() => "")).slice(0, 300);
-    console.error("anthropic error", res.status, detail);
+    console.error("anthropic error", res.status, (await res.text().catch(() => "")).slice(0, 300));
     throw new Error(`anthropic_${res.status}`);
   }
   const body = (await res.json()) as { content?: { type: string; input?: unknown }[] };
-  const block = body.content?.find((b) => b.type === "tool_use");
-  const parsed = extractedSchema.safeParse(block?.input ?? {});
-  if (!parsed.success) throw new Error("bad model output");
-  return parsed.data;
+  return body.content?.find((b) => b.type === "tool_use")?.input;
+}
+
+const OPENAI_TEXT_MODEL = process.env.OPENAI_TEXT_MODEL || "gpt-5-mini";
+
+async function viaOpenAI(key: string, prompt: string, image?: Image): Promise<unknown> {
+  const content: unknown[] = [{ type: "text", text: prompt }];
+  if (image) content.push({ type: "image_url", image_url: { url: `data:${image.mediaType};base64,${image.data}` } });
+  const res = await fetch(`${process.env.OPENAI_BASE_URL || "https://api.openai.com"}/v1/chat/completions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      model: OPENAI_TEXT_MODEL,
+      max_completion_tokens: 3000,
+      ...(OPENAI_TEXT_MODEL.startsWith("gpt-5") ? { reasoning_effort: "minimal" } : {}),
+      messages: [{ role: "system", content: GUIDE }, { role: "user", content }],
+      tools: [{ type: "function", function: { name: TOOL.name, description: TOOL.description, parameters: TOOL.input_schema } }],
+      tool_choice: { type: "function", function: { name: TOOL.name } },
+    }),
+    signal: AbortSignal.timeout(40_000),
+  });
+  if (!res.ok) {
+    console.error("openai text error", res.status, (await res.text().catch(() => "")).slice(0, 300));
+    throw new Error(`openai_${res.status}`);
+  }
+  const body = (await res.json()) as { choices?: { message?: { tool_calls?: { function?: { arguments?: string } }[] } }[] };
+  const args = body.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) throw new Error("openai_no_tool_call");
+  return JSON.parse(args);
 }
