@@ -165,26 +165,51 @@ export default function CreateFlow() {
   }
   const [listening, setListening] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
+  const recRef = useRef<{ stop: () => void } | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setCanSpeak(typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)); }, []);
 
   // Speak instead of typing (Chrome and Android). The words are added to the description box.
+  function stopSpeaking() {
+    try { recRef.current?.stop(); } catch { /* ignore */ }
+    setListening(false);
+  }
+
   function speak() {
-    type Rec = { lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; onerror: (e: { error?: string }) => void; start: () => void };
+    type Rec = {
+      lang: string; interimResults: boolean; continuous: boolean; maxAlternatives: number;
+      onresult: (e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void;
+      onend: () => void; onerror: (e: { error?: string }) => void; start: () => void; stop: () => void; abort: () => void;
+    };
     const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-    if (!Ctor) return;
+    if (!Ctor) { setMicMsg(ai("micFailed")); return; }
+    if (listening) { stopSpeaking(); return; }
     const r = new Ctor();
+    recRef.current = r;
     r.lang = locale === "hi" ? "hi-IN" : "en-IN";
-    r.interimResults = false;
+    r.interimResults = true;   // show words as they are spoken
+    r.continuous = true;       // keep listening until the host taps Stop
+    r.maxAlternatives = 1;
+    // Only the words newly finalised in this event are appended (so nothing repeats).
     r.onresult = (e) => {
-      const said = Array.from(e.results).map((x) => x[0].transcript).join(" ");
-      setDesc((d) => `${d ? d + " " : ""}${said}`.slice(0, 1500));
+      let finalChunk = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (res.isFinal) finalChunk += res[0].transcript + " ";
+      }
+      if (finalChunk) setDesc((d) => `${d ? d + " " : ""}${finalChunk.trim()}`.slice(0, 1500));
     };
     r.onend = () => setListening(false);
     r.onerror = (e) => {
       setListening(false);
-      setMicMsg(e.error === "not-allowed" || e.error === "service-not-allowed" ? ai("micDenied") : e.error === "no-speech" ? ai("micNone") : ai("micFailed"));
+      const err = e.error;
+      setMicMsg(
+        err === "not-allowed" || err === "service-not-allowed" ? ai("micDenied")
+        : err === "no-speech" ? ai("micNone")
+        : err === "aborted" ? null
+        : ai("micFailed"),
+      );
     };
     setMicMsg(null);
     setListening(true);
@@ -423,6 +448,21 @@ export default function CreateFlow() {
       <div className="flex flex-col gap-8">
         <h1 className="font-display text-4xl text-maroon">{created("heading")}</h1>
 
+        <section className="flex flex-col items-center gap-3">
+          <p className="self-start text-lg font-medium">{created("previewHeading")}</p>
+          <div className="w-full max-w-[360px] overflow-hidden rounded-2xl border-2 border-maroon/20 shadow-lg">
+            <iframe
+              src={`/${locale}/e/${result.slug}`}
+              title={created("previewHeading")}
+              loading="lazy"
+              className="h-[560px] w-full"
+            />
+          </div>
+          <Link href={`/${locale}/e/${result.slug}`} className="text-lg text-maroon underline">
+            {created("previewOpen")}
+          </Link>
+        </section>
+
         <section className="flex flex-col gap-3">
           <p className="text-lg font-medium">{created("guestLink")}</p>
           <p className="break-all rounded-lg bg-white/70 p-4 text-base">{guestUrl}</p>
@@ -485,10 +525,11 @@ export default function CreateFlow() {
           className={inputClass}
         />
         {canSpeak && (
-          <button type="button" onClick={speak} disabled={listening} className="flex items-center justify-center gap-3 rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95 disabled:opacity-60">
-            <span aria-hidden>🎤</span>{listening ? ai("listening") : ai("speak")}
+          <button type="button" onClick={speak} className={`flex items-center justify-center gap-3 rounded-lg border-2 px-6 py-4 text-xl font-semibold active:scale-95 ${listening ? "animate-pulse border-red-700 bg-red-50 text-red-800" : "border-maroon text-maroon"}`}>
+            <span aria-hidden>🎤</span>{listening ? ai("micStop") : ai("speak")}
           </button>
         )}
+        {listening && <p className="text-base text-ink-soft">{ai("micHint")}</p>}
         {micMsg && <p role="alert" className="text-lg font-medium text-red-800">{micMsg}</p>}
         <div className="flex flex-col items-start gap-3">
           {sample && (
@@ -780,14 +821,24 @@ export default function CreateFlow() {
       )}
 
       <div className="flex flex-col items-start gap-3">
-        {draft.photoPath && (
+        {draft.photoPath && draft.rich.heroFullCard ? (
+          <figure className="w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photoUrl(draft.photoPath)}
+              alt={ai("art.previewAlt")}
+              className="mx-auto w-full max-w-[340px] rounded-xl shadow-lg"
+            />
+            <figcaption className="mt-2 text-center text-base text-ink-soft">{ai("art.previewCaption")}</figcaption>
+          </figure>
+        ) : draft.photoPath ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={photoUrl(draft.photoPath)}
             alt=""
             className="h-40 w-40 rounded-lg object-cover"
           />
-        )}
+        ) : null}
         <input
           ref={fileRef}
           type="file"

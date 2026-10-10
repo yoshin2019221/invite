@@ -3,6 +3,9 @@ import { z } from "zod";
 import { AiUnavailable, extractInvite, missingQuestions } from "@/lib/ai-draft";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
+// The text model can be slow on a cold start; give it headroom.
+export const maxDuration = 60;
+
 const bodySchema = z.object({
   text: z.string().trim().max(1500),
   image: z.object({ mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().max(2_000_000) }).optional(),

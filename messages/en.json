@@ -381,11 +381,15 @@
       "ready": "Your invitation card is ready. You can design a new one or add your own photo.",
       "again": "Design a new card",
       "readySample": "Your invitation card is ready, in the style of your sample. You can design a new one or add your own photo.",
-      "plainOpen": "Or make a plain background instead"
+      "plainOpen": "Or make a plain background instead",
+      "previewAlt": "Your invitation card",
+      "previewCaption": "This is your invitation. Guests will see exactly this."
     },
     "micDenied": "The microphone is blocked. Tap the lock icon next to the web address, allow the microphone, then try again.",
     "micNone": "We did not hear anything. Tap the button and speak clearly.",
-    "micFailed": "Speaking is not working in this browser. Please type instead, or use Chrome."
+    "micFailed": "Speaking is not working in this browser. Please type instead, or use Chrome.",
+    "micStop": "Stop",
+    "micHint": "Speak clearly. Tap Stop when you are done."
   },
   "Card": {
     "heading": "Save as a picture",

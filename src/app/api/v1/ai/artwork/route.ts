@@ -4,6 +4,9 @@ import { z } from "zod";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { PHOTO_BUCKET, getAdminClient } from "@/lib/supabase/admin";
 
+// Image generation can take 30-40s, so give the function room before the platform cuts it off.
+export const maxDuration = 120;
+
 // Makes invitation artwork with OpenAI's image model (set OPENAI_API_KEY) and saves it as a normal invite photo.
 // Two modes:
 //  - card: designs a COMPLETE invitation card with the real names/date/venue drawn into it. If the host gave a
@@ -82,44 +85,60 @@ export async function POST(request: Request) {
   const quality = isCard ? process.env.IMAGE_CARD_QUALITY || "medium" : "low";
   const size = isCard ? "1024x1536" : "1024x1024"; // portrait card vs square background
 
+  // Generate from a text prompt only (images/generations, JSON).
+  async function generate(finalPrompt: string): Promise<string | undefined> {
+    const res = await fetch(`${base}/v1/images/generations`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify({ model, prompt: finalPrompt, size, quality, n: 1 }),
+      signal: AbortSignal.timeout(115_000),
+    });
+    if (!res.ok) {
+      console.error("image gen api", res.status, (await res.text().catch(() => "")).slice(0, 300));
+      throw new Error(`gen_${res.status}`);
+    }
+    return ((await res.json()) as { data?: { b64_json?: string }[] }).data?.[0]?.b64_json;
+  }
+
+  // Generate using the sample as a visual reference (images/edits, multipart). gpt-image models expect image[].
+  async function editFromReference(finalPrompt: string, ref: NonNullable<typeof reference>): Promise<string | undefined> {
+    const bytes = Buffer.from(ref.data, "base64");
+    const ext = ref.mediaType === "image/png" ? "png" : ref.mediaType === "image/webp" ? "webp" : "jpg";
+    const form = new FormData();
+    form.append("model", model);
+    form.append("prompt", finalPrompt);
+    form.append("size", size);
+    form.append("quality", quality);
+    form.append("n", "1");
+    form.append("image[]", new Blob([new Uint8Array(bytes)], { type: ref.mediaType }), `sample.${ext}`);
+    const res = await fetch(`${base}/v1/images/edits`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}` },
+      body: form,
+      signal: AbortSignal.timeout(115_000),
+    });
+    if (!res.ok) {
+      console.error("image edit api", res.status, (await res.text().catch(() => "")).slice(0, 300));
+      throw new Error(`edit_${res.status}`);
+    }
+    return ((await res.json()) as { data?: { b64_json?: string }[] }).data?.[0]?.b64_json;
+  }
+
   try {
     let b64: string | undefined;
+    const cardText = isCard ? cardPrompt(card, !!reference) : BG_GUARD + prompt + (occasion ? ` (for a ${occasion} invitation, Indian family celebration)` : "");
 
     if (reference) {
-      // Send the sample as a style reference via the image-edit endpoint (multipart form).
-      const bytes = Buffer.from(reference.data, "base64");
-      const ext = reference.mediaType === "image/png" ? "png" : reference.mediaType === "image/webp" ? "webp" : "jpg";
-      const form = new FormData();
-      form.append("model", model);
-      form.append("prompt", isCard ? cardPrompt(card, true) : BG_GUARD + (prompt ?? ""));
-      form.append("size", size);
-      form.append("quality", quality);
-      form.append("n", "1");
-      form.append("image", new Blob([new Uint8Array(bytes)], { type: reference.mediaType }), `sample.${ext}`);
-      const res = await fetch(`${base}/v1/images/edits`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${key}` },
-        body: form,
-        signal: AbortSignal.timeout(120_000),
-      });
-      if (!res.ok) {
-        console.error("image edit api", res.status, (await res.text().catch(() => "")).slice(0, 300));
-        return NextResponse.json({ error: "ai_failed", code: `edit_${res.status}` }, { status: 502 });
+      try {
+        b64 = await editFromReference(cardText, reference);
+      } catch (e) {
+        // The edit endpoint can reject some images/models. Rather than fail, fall back to a plain
+        // generation — the sample's look still comes through via the style text the describe step wrote.
+        console.error("edit failed, falling back to generate", e instanceof Error ? e.message : e);
+        b64 = await generate(isCard ? cardPrompt(card, false) : cardText);
       }
-      b64 = ((await res.json()) as { data?: { b64_json?: string }[] }).data?.[0]?.b64_json;
     } else {
-      const finalPrompt = isCard ? cardPrompt(card, false) : BG_GUARD + prompt + (occasion ? ` (for a ${occasion} invitation, Indian family celebration)` : "");
-      const res = await fetch(`${base}/v1/images/generations`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-        body: JSON.stringify({ model, prompt: finalPrompt, size, quality, n: 1 }),
-        signal: AbortSignal.timeout(120_000),
-      });
-      if (!res.ok) {
-        console.error("image api", res.status, (await res.text().catch(() => "")).slice(0, 300));
-        return NextResponse.json({ error: "ai_failed", code: `gen_${res.status}` }, { status: 502 });
-      }
-      b64 = ((await res.json()) as { data?: { b64_json?: string }[] }).data?.[0]?.b64_json;
+      b64 = await generate(cardText);
     }
 
     if (!b64) return NextResponse.json({ error: "ai_failed" }, { status: 502 });
