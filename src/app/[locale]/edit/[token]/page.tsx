@@ -6,6 +6,8 @@ import { isLocale } from "@/i18n/routing";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { hashToken } from "@/lib/tokens";
 import { formatWhenShort, requestUrl, toLocalInputs } from "@/lib/events";
+import { richOf } from "@/lib/rich";
+import { isTemplate } from "@/lib/templates";
 import { themeOf } from "@/lib/themes";
 import AutoRefresh from "./AutoRefresh";
 import DeleteInvite from "./DeleteInvite";
@@ -32,7 +34,7 @@ export default async function EditPage({
 
   const { data: event } = await getAdminClient()
     .from("events")
-    .select("id, slug, title, host_names, starts_at, timezone, venue_name, address, map_url, message, theme")
+    .select("id, slug, title, host_names, starts_at, timezone, venue_name, address, map_url, message, theme, occasion, template, details")
     .eq("edit_token_hash", hashToken(token))
     .maybeSingle();
   if (!event) notFound();
@@ -168,7 +170,10 @@ export default async function EditPage({
           mapUrl: event.map_url ?? "",
           message: event.message ?? "",
           theme: themeOf(event.theme),
+          template: isTemplate(event.template) ? event.template : "classic",
+          rich: richOf(event.details),
         }}
+        occasion={event.occasion}
       />
       <DeleteInvite token={token} locale={locale} />
     </main>

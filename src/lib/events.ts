@@ -15,6 +15,8 @@ export type PublicEvent = {
   message: string | null;
   photo_path: string | null;
   theme: string;
+  template: string;
+  details: unknown;
   updated_at: string;
 };
 
@@ -23,7 +25,7 @@ export async function getPublicEvent(slug: string): Promise<PublicEvent | null> 
   const { data } = await getAdminClient()
     .from("events")
     .select(
-      "slug, title, host_names, occasion, starts_at, timezone, venue_name, address, map_url, message, photo_path, theme, updated_at, status",
+      "slug, title, host_names, occasion, starts_at, timezone, venue_name, address, map_url, message, photo_path, theme, template, details, updated_at, status",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -37,27 +39,32 @@ export function intlLocale(locale: string) {
   return locale === "hi" ? "hi-IN" : "en-IN";
 }
 
+// Hindi clock time: "शाम 6:30 बजे" (Intl would show an English "pm").
+function hindiTime(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    hour: "numeric", minute: "2-digit", hourCycle: "h23", timeZone: timezone,
+  }).formatToParts(date);
+  const h = Number(parts.find((x) => x.type === "hour")?.value ?? 0);
+  const m = parts.find((x) => x.type === "minute")?.value ?? "00";
+  const period = h < 4 ? "रात" : h < 12 ? "सुबह" : h < 16 ? "दोपहर" : h < 20 ? "शाम" : "रात";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${period} ${h12}:${m} बजे`;
+}
+
 export function formatWhen(startsAt: string, timezone: string, locale: string) {
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: timezone,
-  }).format(new Date(startsAt));
+  const d = new Date(startsAt);
+  const date = new Intl.DateTimeFormat(intlLocale(locale), {
+    weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: timezone,
+  }).format(d);
+  return `${date}, ${formatTimeOnly(startsAt, timezone, locale)}`;
 }
 
 export function formatWhenShort(startsAt: string, timezone: string, locale: string) {
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: timezone,
-  }).format(new Date(startsAt));
+  const d = new Date(startsAt);
+  const date = new Intl.DateTimeFormat(intlLocale(locale), {
+    weekday: "short", day: "numeric", month: "short", timeZone: timezone,
+  }).format(d);
+  return `${date}, ${formatTimeOnly(startsAt, timezone, locale)}`;
 }
 
 export function formatDateOnly(startsAt: string, timezone: string, locale: string) {
@@ -71,6 +78,7 @@ export function formatDateOnly(startsAt: string, timezone: string, locale: strin
 }
 
 export function formatTimeOnly(startsAt: string, timezone: string, locale: string) {
+  if (locale === "hi") return hindiTime(new Date(startsAt), timezone);
   return new Intl.DateTimeFormat(intlLocale(locale), {
     hour: "numeric",
     minute: "2-digit",

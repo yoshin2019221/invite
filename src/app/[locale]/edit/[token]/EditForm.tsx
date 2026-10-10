@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
+import TemplatePicker from "@/components/invite/TemplatePicker";
+import type { Rich } from "@/lib/rich";
+import { TEMPLATE_DEFS, type TemplateId } from "@/lib/templates";
 import { THEMES, THEME_COLORS, type ThemeId } from "@/lib/themes";
 
 export type EditValues = {
@@ -15,15 +19,19 @@ export type EditValues = {
   mapUrl: string;
   message: string;
   theme: ThemeId;
+  template: TemplateId;
+  rich: Rich;
 };
 
 const inputClass =
   "w-full rounded-lg border-2 border-maroon/25 bg-white/70 px-4 py-4 text-xl text-ink focus:border-maroon focus:outline-none aria-[invalid=true]:border-red-700";
 
-export default function EditForm({ token, initial }: { token: string; initial: EditValues }) {
+export default function EditForm({ token, initial, occasion }: { token: string; initial: EditValues; occasion: string }) {
   const t = useTranslations("Edit");
   const c = useTranslations("Create");
   const themes = useTranslations("Themes");
+  const tpl = useTranslations("Templates");
+  const ed = useTranslations("Editor");
   const router = useRouter();
   const [v, setV] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -53,6 +61,8 @@ export default function EditForm({ token, initial }: { token: string; initial: E
           mapUrl: v.mapUrl.trim() || undefined,
           message: v.message.trim() || undefined,
           theme: v.theme,
+          template: v.template,
+          rich: TEMPLATE_DEFS[v.template].rich ? v.rich : undefined,
         }),
       });
       if (!res.ok) throw new Error("save failed");
@@ -120,6 +130,16 @@ export default function EditForm({ token, initial }: { token: string; initial: E
         <textarea id="e-message" rows={3} className={inputClass} value={v.message} maxLength={600}
           onChange={(e) => set("message", e.target.value)} />
       </div>
+      <div className="flex flex-col gap-3">
+        <h3 className={label}>{tpl("heading")}</h3>
+        <TemplatePicker occasion={occasion} value={v.template} onChange={(id) => set("template", id)} />
+      </div>
+      {TEMPLATE_DEFS[v.template].rich ? (
+        <div className="flex flex-col gap-4">
+          <h3 className="font-display text-2xl text-maroon">{ed("heading")}</h3>
+          <RichSectionsEditor value={v.rich} onChange={(r) => set("rich", r)} />
+        </div>
+      ) : (
       <fieldset>
         <legend className={label}>{c("themeHeading")}</legend>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -140,6 +160,7 @@ export default function EditForm({ token, initial }: { token: string; initial: E
           })}
         </div>
       </fieldset>
+      )}
 
       {state === "required" && <p role="alert" className="text-lg font-medium text-red-800">{c("errors.required")}</p>}
       {state === "error" && <p role="alert" className="text-lg font-medium text-red-800">{c("errors.generic")}</p>}

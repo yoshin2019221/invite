@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { OCCASIONS } from "@/lib/validation";
-import { compressImage } from "@/lib/image";
-import { getBrowserClient } from "@/lib/supabase/browser";
+import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
+import TemplatePicker from "@/components/invite/TemplatePicker";
+import { EMPTY_RICH, type Rich } from "@/lib/rich";
+import { DEFAULT_TEMPLATE, TEMPLATE_DEFS, templatesFor, type TemplateId } from "@/lib/templates";
+import { photoUrl, uploadPhoto } from "@/lib/upload-client";
 import { DEFAULT_THEME, OCCASION_THEME, THEMES, THEME_COLORS, type ThemeId } from "@/lib/themes";
 
 type Occasion = (typeof OCCASIONS)[number];
@@ -22,6 +25,8 @@ type Draft = {
   message: string;
   photoPath: string | null;
   theme: ThemeId;
+  template: TemplateId;
+  rich: Rich;
 };
 
 const EMPTY: Draft = {
@@ -36,6 +41,8 @@ const EMPTY: Draft = {
   message: "",
   photoPath: null,
   theme: DEFAULT_THEME,
+  template: DEFAULT_TEMPLATE,
+  rich: EMPTY_RICH,
 };
 
 const DRAFT_KEY = "gharinvite:draft";
@@ -44,20 +51,18 @@ const EVENTS_KEY = "gharinvite:events";
 const inputClass =
   "w-full rounded-lg border-2 border-maroon/25 bg-white/70 px-4 py-4 text-xl text-ink placeholder:text-ink-soft/50 focus:border-maroon focus:outline-none aria-[invalid=true]:border-red-700";
 
-function photoUrl(path: string) {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/invite-photos/${path}`;
-}
-
 export default function CreateFlow() {
   const t = useTranslations("Create");
   const occasions = useTranslations("Occasions");
   const created = useTranslations("Created");
   const themes = useTranslations("Themes");
+  const tpl = useTranslations("Templates");
+  const ed = useTranslations("Editor");
   const locale = useLocale() as "en" | "hi";
 
   const [loaded, setLoaded] = useState(false);
   const [restored, setRestored] = useState(false);
-  const [step, setStep] = useState<"occasion" | "details" | "done">("occasion");
+  const [step, setStep] = useState<"occasion" | "template" | "details" | "done">("occasion");
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -113,18 +118,7 @@ export default function CreateFlow() {
     setPhotoBusy(true);
     setMessage(null);
     try {
-      const blob = await compressImage(file);
-      const res = await fetch("/api/v1/uploads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentType: "image/jpeg" }),
-      });
-      if (!res.ok) throw new Error("upload url failed");
-      const { path, token } = (await res.json()) as { path: string; token: string };
-      const { error } = await getBrowserClient()
-        .storage.from("invite-photos")
-        .uploadToSignedUrl(path, token, blob, { contentType: "image/jpeg" });
-      if (error) throw error;
+      const path = await uploadPhoto(file);
       update("photoPath", path);
     } catch {
       setMessage(t("errors.photo"));
@@ -159,6 +153,8 @@ export default function CreateFlow() {
           language: locale,
           photoPath: draft.photoPath ?? undefined,
           theme: draft.theme,
+          template: draft.template,
+          rich: TEMPLATE_DEFS[draft.template].rich ? draft.rich : undefined,
         }),
       });
       if (!res.ok) throw new Error("create failed");
@@ -259,7 +255,8 @@ export default function CreateFlow() {
               onClick={() => {
                 update("occasion", o);
                 update("theme", OCCASION_THEME[o] ?? DEFAULT_THEME);
-                setStep("details");
+                update("template", templatesFor(o)[1] ?? DEFAULT_TEMPLATE);
+                setStep("template");
               }}
               className={`min-h-28 rounded-xl border-2 px-4 py-6 text-2xl font-medium transition-transform active:scale-95 ${
                 draft.occasion === o
@@ -276,6 +273,26 @@ export default function CreateFlow() {
   }
 
   const occasion = draft.occasion ?? "party";
+  const isRich = TEMPLATE_DEFS[draft.template].rich;
+
+  if (step === "template") {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="font-display text-4xl text-maroon">{tpl("heading")}</h1>
+          <button type="button" onClick={() => setStep("occasion")} className="rounded-md border border-maroon/30 px-4 py-2 text-base text-maroon">
+            {t("back")}
+          </button>
+        </div>
+        <p className="text-lg text-ink-soft">{tpl("intro")}</p>
+        <TemplatePicker occasion={occasion} value={draft.template} onChange={(id) => update("template", id)} />
+        <button type="button" onClick={() => setStep("details")} className="sticky bottom-4 rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper shadow-lg active:scale-95">
+          {t("continue")}
+        </button>
+      </div>
+    );
+  }
+
   const label = "mb-2 block text-lg font-medium";
   const err = (bad: boolean) => (showErrors && bad ? true : undefined);
 
@@ -292,7 +309,7 @@ export default function CreateFlow() {
         <h1 className="font-display text-4xl text-maroon">{t("detailsHeading")}</h1>
         <button
           type="button"
-          onClick={() => setStep("occasion")}
+          onClick={() => setStep("template")}
           className="rounded-md border border-maroon/30 px-4 py-2 text-base text-maroon"
         >
           {occasions(occasion)} · {t("back")}
@@ -400,6 +417,7 @@ export default function CreateFlow() {
         />
       </div>
 
+      {!isRich && (
       <fieldset>
         <legend className={label}>{t("themeHeading")}</legend>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -425,6 +443,7 @@ export default function CreateFlow() {
           })}
         </div>
       </fieldset>
+      )}
 
       <div className="flex flex-col items-start gap-3">
         {draft.photoPath && (
@@ -455,6 +474,13 @@ export default function CreateFlow() {
               : t("fields.photo")}
         </button>
       </div>
+
+      {isRich && (
+        <div className="flex flex-col gap-4">
+          <h2 className="font-display text-3xl text-maroon">{ed("heading")}</h2>
+          <RichSectionsEditor value={draft.rich} onChange={(r) => update("rich", r)} />
+        </div>
+      )}
 
       {message && (
         <p role="alert" className="text-lg font-medium text-red-800">

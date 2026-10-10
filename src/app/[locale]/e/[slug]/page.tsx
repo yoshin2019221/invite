@@ -15,7 +15,9 @@ import {
   mapLink,
 } from "@/lib/events";
 import { photoPublicUrl } from "@/lib/supabase/admin";
+import { templateOf } from "@/lib/templates";
 import { themeOf } from "@/lib/themes";
+import RichInvite from "@/components/invite/RichInvite";
 import RsvpForm from "./RsvpForm";
 
 // Rendered once, then served from cache and refreshed at most once a minute.
@@ -79,6 +81,18 @@ export default async function GuestInvitePage({
 
   const event = await loadEvent(slug);
   if (!event) notFound();
+
+  if (templateOf(event.template).rich) {
+    const o: Locale = locale === "en" ? "hi" : "en";
+    return (
+      <RichInvite
+        event={event}
+        locale={locale}
+        inviteUrl={absoluteUrl(`/${locale}/e/${slug}`)}
+        otherLocalePath={`/${o}/e/${slug}`}
+      />
+    );
+  }
 
   const t = await getTranslations("Guest");
   const occasions = await getTranslations("Occasions");

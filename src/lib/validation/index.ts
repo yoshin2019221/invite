@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { richSchema } from "@/lib/rich";
+import { DEFAULT_TEMPLATE, TEMPLATES } from "@/lib/templates";
 import { DEFAULT_THEME, THEMES } from "@/lib/themes";
 
 export const OCCASIONS = [
@@ -7,6 +9,7 @@ export const OCCASIONS = [
   "pooja",
   "baby",
   "party",
+  "wedding",
 ] as const;
 export const LANGUAGES = ["en", "hi"] as const;
 export const RSVP_STATUSES = ["coming", "not_coming", "maybe"] as const;
@@ -25,8 +28,9 @@ export const createEventSchema = z.object({
   address: trimmed(300).optional(),
   mapUrl: z.url().optional(),
   message: trimmed(600).optional(),
-  details: z.record(z.string(), z.unknown()).default({}),
+  rich: richSchema.optional(),
   theme: z.enum(THEMES).default(DEFAULT_THEME),
+  template: z.enum(TEMPLATES).default(DEFAULT_TEMPLATE),
   language: z.enum(LANGUAGES).default("en"),
   photoPath: z
     .string()
@@ -71,6 +75,8 @@ export const updateEventSchema = z.object({
   mapUrl: z.url().optional(),
   message: trimmed(600).optional(),
   theme: z.enum(THEMES),
+  template: z.enum(TEMPLATES).optional(),
+  rich: richSchema.optional(),
 });
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 

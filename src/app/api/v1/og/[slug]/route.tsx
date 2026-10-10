@@ -38,6 +38,7 @@ export async function GET(
     photo: await fetchPhoto(photoPublicUrl(event.photo_path)),
     brand: "GharInvite",
     theme: event.theme,
+    template: event.template,
   });
 
   return new Response(new Uint8Array(jpeg), {

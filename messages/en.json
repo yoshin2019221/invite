@@ -18,7 +18,8 @@
     "housewarming": "Housewarming",
     "pooja": "Pooja",
     "baby": "Baby celebration",
-    "party": "Party"
+    "party": "Party",
+    "wedding": "Wedding"
   },
   "Create": {
     "heading": "Create your invite",
@@ -47,7 +48,8 @@
         "housewarming": "Griha Pravesh",
         "pooja": "Satyanarayan Pooja",
         "baby": "Naming ceremony",
-        "party": "Family get-together"
+        "party": "Family get-together",
+        "wedding": "Aarav & Meera's wedding"
       },
       "hostNames": "The Sharma family",
       "message": "We would be delighted to have you with us."
@@ -58,7 +60,8 @@
       "photo": "Could not upload the photo. You can continue without it."
     },
     "draftRestored": "We restored your unfinished invite.",
-    "themeHeading": "Choose a look"
+    "themeHeading": "Choose a look",
+    "continue": "Continue"
   },
   "Created": {
     "heading": "Your invite is ready",
@@ -202,5 +205,72 @@
     "remindText": "{name}, a gentle reminder: {title} on {when}. Please tell us if you can come:",
     "remove": "Remove",
     "removeConfirm": "Remove this household and its reply?"
+  },
+  "Rich": {
+    "heroScroll": "Scroll",
+    "replyNow": "Reply to the invite",
+    "countdownHeading": "Counting down",
+    "days": "Days",
+    "hours": "Hours",
+    "minutes": "Minutes",
+    "seconds": "Seconds",
+    "countdownDone": "The day is here",
+    "storyHeading": "Our story",
+    "itineraryHeading": "The celebrations",
+    "venueHeading": "Venue",
+    "galleryHeading": "Moments",
+    "rsvpHeading": "Will you join us?",
+    "musicPlay": "Play music",
+    "musicPause": "Pause music",
+    "previewNote": "This is a preview with sample details. Replies are switched off.",
+    "hostedBy": "With love, {names}",
+    "forward": "Forward to family on WhatsApp",
+    "calendar": "Add to calendar",
+    "google": "Google Calendar",
+    "map": "Open in Google Maps",
+    "switchTo": "हिन्दी"
+  },
+  "Templates": {
+    "heading": "Choose a look",
+    "intro": "Tap a design to pick it. This is how guests will see your invite.",
+    "classic": "Classic card",
+    "royal": "Royal",
+    "bloom": "Bloom",
+    "griha": "Griha",
+    "pooja": "Pooja",
+    "confetti": "Confetti",
+    "blossom": "Blossom",
+    "night": "Night",
+    "fullPreview": "Full preview",
+    "selected": "Selected",
+    "classicSample": "Simple one-page card",
+    "classicNote": "Quick and light, works on any phone"
+  },
+  "Editor": {
+    "heading": "Make it richer (optional)",
+    "itinerary": "Events and timings",
+    "itineraryHint": "Wedding functions or a day plan. Leave empty to show just the main date.",
+    "eventName": "Event name, e.g. Mehendi",
+    "date": "Date",
+    "time": "Time",
+    "eventVenue": "Venue (optional)",
+    "eventNote": "Note, e.g. dress code (optional)",
+    "addEvent": "Add an event",
+    "remove": "Remove",
+    "story": "Our story",
+    "storyHint": "A few moments that appear as a timeline.",
+    "storyTitle": "What happened",
+    "storyWhen": "When, e.g. 2019",
+    "storyText": "A line or two (optional)",
+    "addStory": "Add a moment",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "gallery": "Photo gallery",
+    "galleryHint": "Up to 8 photos.",
+    "addPhotos": "Add photos",
+    "uploading": "Uploading…",
+    "uploadError": "A photo could not be uploaded. Try again.",
+    "countdown": "Show a countdown to the date",
+    "music": "Show a button to play soft music"
   }
 }

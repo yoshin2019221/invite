@@ -1,6 +1,7 @@
 import "server-only";
 import { fileURLToPath } from "node:url";
 import sharp, { type OverlayOptions } from "sharp";
+import { templateOf } from "@/lib/templates";
 import { THEME_COLORS, themeOf } from "@/lib/themes";
 
 // The invite card is drawn with sharp's text engine (Pango + HarfBuzz) rather than an
@@ -18,6 +19,7 @@ export type InviteImageInput = {
   photo?: Buffer | null;
   brand: string;
   theme?: string | null;
+  template?: string | null;
 };
 
 const FONT = {
@@ -76,7 +78,8 @@ async function fitTitle(title: string, width: number, maxHeight: number, color: 
 }
 
 export async function renderInviteJpeg(input: InviteImageInput) {
-  const c = THEME_COLORS[themeOf(input.theme)];
+  const tpl = templateOf(input.template);
+  const c = tpl.rich ? tpl.colors : THEME_COLORS[themeOf(input.theme)];
   const MAROON = c.accent;
   const INK = c.ink;
   const INK_SOFT = c.inkSoft;

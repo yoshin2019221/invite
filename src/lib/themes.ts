@@ -69,4 +69,5 @@ export const OCCASION_THEME: Record<string, ThemeId> = {
   pooja: "haldi",
   baby: "gulab",
   party: "mehendi",
+  wedding: "gulab",
 };

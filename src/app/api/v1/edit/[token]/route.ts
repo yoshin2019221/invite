@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { PHOTO_BUCKET, getAdminClient } from "@/lib/supabase/admin";
+import { richPhotoPaths } from "@/lib/rich";
 import { hashToken } from "@/lib/tokens";
 import { updateEventSchema } from "@/lib/validation";
 
@@ -40,6 +41,8 @@ export async function PATCH(
       map_url: i.mapUrl ?? null,
       message: i.message ?? null,
       theme: i.theme,
+      ...(i.template ? { template: i.template } : {}),
+      ...(i.rich ? { details: { rich: i.rich } } : {}),
     })
     .eq("edit_token_hash", hashToken(token))
     .select("slug");
@@ -68,14 +71,16 @@ export async function DELETE(
   const db = getAdminClient();
   const { data } = await db
     .from("events")
-    .select("id, photo_path")
+    .select("id, photo_path, details")
     .eq("edit_token_hash", hashToken(token))
     .maybeSingle();
   if (!data) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  if (data.photo_path) {
-    await db.storage.from(PHOTO_BUCKET).remove([data.photo_path]);
-  }
+  const files = [
+    ...(data.photo_path ? [data.photo_path] : []),
+    ...richPhotoPaths(data.details),
+  ];
+  if (files.length) await db.storage.from(PHOTO_BUCKET).remove(files);
   const { error } = await db.from("events").delete().eq("id", data.id);
   if (error) {
     console.error("delete event failed", error);
