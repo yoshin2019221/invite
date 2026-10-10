@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { OCCASIONS } from "@/lib/validation";
+import { compressImage } from "@/lib/image";
 import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
 import TemplatePicker from "@/components/invite/TemplatePicker";
 import { EMPTY_RICH, type Rich } from "@/lib/rich";
@@ -58,11 +59,12 @@ export default function CreateFlow() {
   const themes = useTranslations("Themes");
   const tpl = useTranslations("Templates");
   const ed = useTranslations("Editor");
+  const ai = useTranslations("Describe");
   const locale = useLocale() as "en" | "hi";
 
   const [loaded, setLoaded] = useState(false);
   const [restored, setRestored] = useState(false);
-  const [step, setStep] = useState<"occasion" | "template" | "details" | "done">("occasion");
+  const [step, setStep] = useState<"describe" | "ask" | "occasion" | "template" | "details" | "done">("describe");
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -71,6 +73,35 @@ export default function CreateFlow() {
   const [result, setResult] = useState<{ slug: string; editToken: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [desc, setDesc] = useState("");
+  const [sample, setSample] = useState<{ mediaType: string; data: string; preview: string } | null>(null);
+  const [thinking, setThinking] = useState(false);
+  const [aiMsg, setAiMsg] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<string[]>([]);
+  const sampleRef = useRef<HTMLInputElement>(null);
+  const [listening, setListening] = useState(false);
+  const [canSpeak, setCanSpeak] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setCanSpeak(typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)); }, []);
+
+  // Speak instead of typing (Chrome and Android). The words are added to the description box.
+  function speak() {
+    type Rec = { lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; onerror: () => void; start: () => void };
+    const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) return;
+    const r = new Ctor();
+    r.lang = locale === "hi" ? "hi-IN" : "en-IN";
+    r.interimResults = false;
+    r.onresult = (e) => {
+      const said = Array.from(e.results).map((x) => x[0].transcript).join(" ");
+      setDesc((d) => `${d ? d + " " : ""}${said}`.slice(0, 1500));
+    };
+    r.onend = () => setListening(false);
+    r.onerror = () => setListening(false);
+    setListening(true);
+    r.start();
+  }
 
   // One-time restore of an unfinished draft; localStorage only exists in the browser.
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -176,6 +207,78 @@ export default function CreateFlow() {
     }
   }
 
+  async function onSample(file: File | undefined) {
+    if (!file) return;
+    try {
+      const blob = await compressImage(file);
+      const data = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result));
+        r.onerror = rej;
+        r.readAsDataURL(blob);
+      });
+      setSample({ mediaType: "image/jpeg", data: data.split(",")[1] ?? "", preview: data });
+    } catch {
+      setAiMsg(ai("errors.image"));
+    }
+    if (sampleRef.current) sampleRef.current.value = "";
+  }
+
+  async function describe() {
+    if (!desc.trim() && !sample) return;
+    setThinking(true);
+    setAiMsg(null);
+    try {
+      const res = await fetch("/api/v1/ai/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: desc.trim(), image: sample ? { mediaType: sample.mediaType, data: sample.data } : undefined }),
+      });
+      if (res.status === 429) { setAiMsg(ai("errors.busy")); return; }
+      if (!res.ok) { setAiMsg(ai("errors.unavailable")); return; }
+      const { draft: d, questions: qs } = (await res.json()) as {
+        draft: {
+          occasion: Occasion | null; title: string | null; hostNames: string | null; date: string | null; time: string | null;
+          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null;
+          itinerary: { name: string; date: string | null; time: string | null; venue: string | null; note: string | null }[];
+          story: { title: string; when: string | null; text: string | null }[];
+        };
+        questions: string[];
+      };
+      const occ = d.occasion;
+      const tplId = d.templateId ?? (occ ? templatesFor(occ)[1] : null) ?? DEFAULT_TEMPLATE;
+      setDraft((cur) => ({
+        ...cur,
+        occasion: occ ?? cur.occasion,
+        title: d.title ?? cur.title,
+        hostNames: d.hostNames ?? cur.hostNames,
+        date: d.date ?? cur.date,
+        time: d.time ?? cur.time,
+        venueName: d.venueName ?? cur.venueName,
+        address: d.address ?? cur.address,
+        message: d.message ?? cur.message,
+        theme: occ ? (OCCASION_THEME[occ] ?? cur.theme) : cur.theme,
+        template: tplId,
+        rich: {
+          ...cur.rich,
+          itinerary: d.itinerary.map((e) => ({
+            name: e.name,
+            startsAt: e.date ? `${e.date}T${e.time ?? "12:00"}:00+05:30` : undefined,
+            venue: e.venue ?? undefined,
+            note: e.note ?? undefined,
+          })),
+          story: d.story.map((x) => ({ title: x.title, when: x.when ?? undefined, text: x.text ?? undefined })),
+        },
+      }));
+      setQuestions(qs);
+      setStep(qs.length ? "ask" : "details");
+    } catch {
+      setAiMsg(ai("errors.unavailable"));
+    } finally {
+      setThinking(false);
+    }
+  }
+
   async function copy(id: string, text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -239,6 +342,103 @@ export default function CreateFlow() {
             {copied === "edit" ? created("copied") : created("copy")}
           </button>
         </section>
+      </div>
+    );
+  }
+
+  if (step === "describe") {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="font-display text-4xl text-maroon">{ai("heading")}</h1>
+        <p className="text-lg text-ink-soft">{ai("intro")}</p>
+        <textarea
+          rows={6}
+          value={desc}
+          maxLength={1500}
+          onChange={(e) => setDesc(e.target.value)}
+          placeholder={ai("placeholder")}
+          aria-label={ai("heading")}
+          className={inputClass}
+        />
+        {canSpeak && (
+          <button type="button" onClick={speak} disabled={listening} className="flex items-center justify-center gap-3 rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95 disabled:opacity-60">
+            <span aria-hidden>🎤</span>{listening ? ai("listening") : ai("speak")}
+          </button>
+        )}
+        <div className="flex flex-col items-start gap-3">
+          {sample && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={sample.preview} alt="" className="h-40 rounded-lg object-cover" />
+          )}
+          <input ref={sampleRef} type="file" accept="image/*" className="hidden" onChange={(e) => void onSample(e.target.files?.[0])} />
+          <div className="flex flex-wrap items-center gap-4">
+            <button type="button" onClick={() => sampleRef.current?.click()} className="rounded-lg border-2 border-maroon/40 px-5 py-3 text-lg font-medium text-maroon active:scale-95">
+              {sample ? ai("changeSample") : ai("addSample")}
+            </button>
+            {sample && <button type="button" onClick={() => setSample(null)} className="text-base text-red-800 underline">{ai("removeSample")}</button>}
+          </div>
+          <p className="text-base text-ink-soft">{ai("sampleHint")}</p>
+        </div>
+        {aiMsg && <p role="alert" className="text-lg font-medium text-red-800">{aiMsg}</p>}
+        <button type="button" disabled={thinking || (!desc.trim() && !sample)} onClick={() => void describe()} className="rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper transition-transform active:scale-95 disabled:opacity-50">
+          {thinking ? ai("thinking") : ai("go")}
+        </button>
+        <button type="button" onClick={() => setStep("occasion")} className="self-center text-lg text-maroon underline">
+          {ai("manual")}
+        </button>
+      </div>
+    );
+  }
+
+  if (step === "ask") {
+    const q = new Set(questions);
+    const occ = draft.occasion ?? "party";
+    const lab = "mb-2 block text-lg font-medium";
+    const ready = (!q.has("occasion") || draft.occasion) && (!q.has("title") || draft.title.trim()) && (!q.has("hostNames") || draft.hostNames.trim()) && (!q.has("date") || draft.date) && (!q.has("time") || draft.time);
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="font-display text-4xl text-maroon">{ai("askHeading")}</h1>
+        <p className="text-lg text-ink-soft">{ai("askIntro")}</p>
+        {q.has("occasion") && (
+          <fieldset>
+            <legend className={lab}>{ai("qOccasion")}</legend>
+            <div className="grid grid-cols-2 gap-3">
+              {OCCASIONS.map((o) => (
+                <button key={o} type="button" aria-pressed={draft.occasion === o}
+                  onClick={() => { update("occasion", o); update("theme", OCCASION_THEME[o] ?? DEFAULT_THEME); if (q.has("style")) update("template", templatesFor(o)[1] ?? DEFAULT_TEMPLATE); }}
+                  className={`rounded-xl border-2 px-3 py-4 text-xl font-medium active:scale-95 ${draft.occasion === o ? "border-maroon bg-maroon text-paper" : "border-maroon/25 bg-white/70 text-maroon"}`}>
+                  {occasions(o)}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        )}
+        {q.has("title") && (
+          <div><label className={lab} htmlFor="q-title">{ai("qTitle")}</label>
+            <input id="q-title" className={inputClass} value={draft.title} maxLength={120} onChange={(e) => update("title", e.target.value)} placeholder={t(`hints.title.${occ}`)} /></div>
+        )}
+        {q.has("hostNames") && (
+          <div><label className={lab} htmlFor="q-host">{ai("qHost")}</label>
+            <input id="q-host" className={inputClass} value={draft.hostNames} maxLength={120} onChange={(e) => update("hostNames", e.target.value)} placeholder={t("hints.hostNames")} /></div>
+        )}
+        {(q.has("date") || q.has("time")) && (
+          <div className="grid grid-cols-2 gap-4">
+            {q.has("date") && (<div><label className={lab} htmlFor="q-date">{ai("qDate")}</label>
+              <input id="q-date" type="date" className={inputClass} value={draft.date} onChange={(e) => update("date", e.target.value)} /></div>)}
+            {q.has("time") && (<div><label className={lab} htmlFor="q-time">{ai("qTime")}</label>
+              <input id="q-time" type="time" className={inputClass} value={draft.time} onChange={(e) => update("time", e.target.value)} /></div>)}
+          </div>
+        )}
+        {q.has("style") && (
+          <div className="flex flex-col gap-3">
+            <p className={lab}>{ai("qStyle")}</p>
+            <TemplatePicker occasion={occ} value={draft.template} onChange={(id) => update("template", id)} />
+          </div>
+        )}
+        <button type="button" disabled={!ready} onClick={() => setStep("details")} className="sticky bottom-4 rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper shadow-lg active:scale-95 disabled:opacity-50">
+          {t("continue")}
+        </button>
+        <button type="button" onClick={() => setStep("describe")} className="self-center text-lg text-maroon underline">{t("back")}</button>
       </div>
     );
   }

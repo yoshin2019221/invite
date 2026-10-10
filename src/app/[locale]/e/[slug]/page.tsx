@@ -54,7 +54,7 @@ export async function generateMetadata({
     robots: { index: false, follow: false },
     openGraph: {
       type: "website",
-      siteName: "GharInvite",
+      siteName: "weInvite",
       title: event.title,
       description,
       locale: locale === "hi" ? "hi_IN" : "en_IN",

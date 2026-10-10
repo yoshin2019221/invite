@@ -30,7 +30,7 @@ body {
   min-height: 100dvh;
   color: var(--ink);
   font-family: var(--nf-body), var(--nf-body-hi), system-ui, sans-serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   background-color: var(--paper);
   background-image:
     radial-gradient(circle at 12% 8%, rgba(224, 138, 30, 0.14), transparent 42%),

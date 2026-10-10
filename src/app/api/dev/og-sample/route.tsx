@@ -30,7 +30,7 @@ export async function GET(request: Request) {
           whenLine: "शनिवार, 14 नवंबर 2026, शाम 6:30",
           whereLine: "सुंदर विला, सेक्टर 21, गुरुग्राम",
           photo,
-          brand: "GharInvite",
+          brand: "weInvite",
           theme,
         }
       : {
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
           whenLine: "Saturday, 14 November 2026, 6:30 pm",
           whereLine: "Sundar Villa, Sector 21, Gurugram",
           photo,
-          brand: "GharInvite",
+          brand: "weInvite",
           theme,
         },
   );

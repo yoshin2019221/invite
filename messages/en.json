@@ -1,13 +1,73 @@
 {
   "Brand": {
-    "name": "GharInvite"
+    "name": "weInvite"
   },
   "Home": {
     "headline": "Invite the whole family. Know who is really coming.",
     "subline": "Make a beautiful invitation in minutes, send one WhatsApp link, and see every household's headcount.",
     "cta": "Create free invite",
+    "ctaSee": "See the designs",
     "note": "No app for guests • Works on WhatsApp • Hindi + English",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "looksHeading": "Designs for every celebration",
+    "looksSub": "Each one scrolls like a story, with music, a countdown and your own photos.",
+    "stepsHeading": "From idea to headcount in three steps",
+    "s1t": "Make it",
+    "s1d": "Pick a design, add the date, venue and a few photos. Hindi or English.",
+    "s2t": "Send one link",
+    "s2d": "Share on WhatsApp. Guests open it right away, no app and no login.",
+    "s3t": "Watch replies come in",
+    "s3d": "Every household answers once. You see the live count of who is coming.",
+    "countLabel": "people coming",
+    "countHouseholds": "from 14 households",
+    "sample1": "Sharma family",
+    "sample2": "Verma family",
+    "sample3": "Aunty Neelam",
+    "people": "{n} people",
+    "maybe": "Maybe",
+    "finalHeading": "Your next celebration deserves a better invite",
+    "finalCta": "Create free invite",
+    "previewAria": "Sample invite preview",
+    "live": {
+      "question": "What are you celebrating?",
+      "label": "Type a name to see it on the invite",
+      "cta": "Make this invite",
+      "hint": "Live preview. Tap another celebration to change the design.",
+      "hosts": "With love, family and friends",
+      "button": "Reply to the invite",
+      "names": {
+        "wedding": "Aarav & Meera",
+        "birthday": "Aarav",
+        "housewarming": "Sharma",
+        "pooja": "Sharma",
+        "baby": "Aarav",
+        "party": "Aarav"
+      },
+      "titles": {
+        "wedding": "{name}'s Wedding",
+        "birthday": "{name}'s Birthday",
+        "housewarming": "{name} Family's New Home",
+        "pooja": "{name} Family Pooja",
+        "baby": "Welcome, Baby {name}",
+        "party": "{name}'s Party"
+      }
+    },
+    "demo": {
+      "title": "Try the reply, like your guests",
+      "sub": "Tap an answer. Watch the headcount change on your side.",
+      "question": "Will you come?",
+      "coming": "Yes, coming",
+      "maybe": "Maybe",
+      "no": "Cannot come",
+      "howMany": "How many people?",
+      "label": "people coming",
+      "h1": "Sharma family",
+      "h2": "Verma family",
+      "you": "You",
+      "people": "{n} people"
+    },
+    "textSize": "Larger text",
+    "tapOpen": "Tap to open"
   },
   "Language": {
     "switchTo": "हिन्दी",
@@ -272,5 +332,32 @@
     "uploadError": "A photo could not be uploaded. Try again.",
     "countdown": "Show a countdown to the date",
     "music": "Show a button to play soft music"
+  },
+  "Describe": {
+    "heading": "Describe your invite",
+    "intro": "Tell us about your celebration in your own words. English, Hindi or Hinglish all work. We will fill in the rest.",
+    "placeholder": "Aarav's 5th birthday on 15 November at 5 pm at our home in Dwarka. Bright and colourful with balloons.",
+    "addSample": "Add a sample invite you like",
+    "changeSample": "Change sample",
+    "removeSample": "Remove",
+    "sampleHint": "Optional. We match its look and read any details on it.",
+    "go": "Create my invite",
+    "thinking": "Reading your description…",
+    "manual": "Or choose the occasion yourself",
+    "askHeading": "Just a few quick questions",
+    "askIntro": "We could not find these in your description.",
+    "qOccasion": "What are we celebrating?",
+    "qTitle": "What should the invite be called?",
+    "qHost": "Who is hosting?",
+    "qDate": "Date",
+    "qTime": "Time",
+    "qStyle": "What look do you like?",
+    "errors": {
+      "unavailable": "We could not read that right now. You can choose the occasion yourself instead.",
+      "busy": "Too many tries. Please wait a minute.",
+      "image": "We could not use that picture. Try another."
+    },
+    "speak": "Speak instead of typing",
+    "listening": "Listening…"
   }
 }

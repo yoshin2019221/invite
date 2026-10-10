@@ -36,7 +36,7 @@ export async function GET(
     whenLine: formatWhen(event.starts_at, event.timezone, locale),
     whereLine: whereLine && whereLine.length > 70 ? `${whereLine.slice(0, 68)}…` : whereLine,
     photo: await fetchPhoto(photoPublicUrl(event.photo_path)),
-    brand: "GharInvite",
+    brand: "weInvite",
     theme: event.theme,
     template: event.template,
   });

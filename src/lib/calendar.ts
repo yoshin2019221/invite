@@ -50,7 +50,7 @@ export function buildIcs(event: PublicEvent, inviteUrl: string) {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//GharInvite//Invite//EN",
+    "PRODID:-//weInvite//Invite//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

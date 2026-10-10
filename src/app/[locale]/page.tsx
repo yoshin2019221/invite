@@ -1,61 +1,102 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { use } from "react";
 import { isLocale, type Locale } from "@/i18n/routing";
-import { notFound } from "next/navigation";
+import Hero from "@/components/home/Hero";
+import RsvpDemo from "@/components/home/RsvpDemo";
+import TextSize from "@/components/home/TextSize";
+import "./home.css";
 
-export default function HomePage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+// A phone-sized live preview of a real template, scaled down. Opens the full preview when tapped.
+function Phone({ locale, id, label, className = "" }: { locale: string; id: string; label: string; className?: string }) {
+  return (
+    <div className={`phone ${className}`}>
+      <iframe src={`/${locale}/preview/${id}`} title={label} loading="lazy" tabIndex={-1} aria-hidden />
+    </div>
+  );
+}
+
+const LOOKS = ["royal", "bloom", "griha", "pooja", "confetti", "blossom", "night"] as const;
+const OCC: Record<(typeof LOOKS)[number], string> = {
+  royal: "wedding", bloom: "wedding", griha: "housewarming", pooja: "pooja", confetti: "birthday", blossom: "baby", night: "party",
+};
+
+export default function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = use(params);
   if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
   const t = useTranslations("Home");
   const brand = useTranslations("Brand");
+  const demo = useTranslations("Home.demo");
   const lang = useTranslations("Language");
+  const occ = useTranslations("Occasions");
+  const tpl = useTranslations("Templates");
   const other: Locale = locale === "en" ? "hi" : "en";
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col px-6 py-6">
-      <header className="flex justify-end">
-        <Link
-          href={`/${other}`}
-          hrefLang={other}
-          aria-label={lang("label")}
-          className="rounded-md border border-maroon/30 px-4 py-2 text-base font-medium text-maroon transition-transform active:scale-95"
-        >
-          {lang("switchTo")}
-        </Link>
-      </header>
+    <div className="home">
+      <section className="h-hero">
+        <div className="h-torana" aria-hidden />
+        <header className="h-top">
+          <span className="h-brand">{brand("name")}</span>
+          <div className="h-top-r">
+            <TextSize />
+            <Link href={`/${other}`} hrefLang={other} aria-label={lang("label")} className="h-lang">
+              {lang("switchTo")}
+            </Link>
+          </div>
+        </header>
 
-      <section className="flex flex-1 flex-col justify-center gap-6 pb-16">
-        <p className="rise font-display text-6xl leading-none text-maroon sm:text-8xl">
-          {brand("name")}
-        </p>
-        <h1 className="rise rise-2 font-display text-3xl leading-tight text-ink sm:text-5xl">
-          {t("headline")}
-        </h1>
-        <p className="rise rise-2 max-w-xl text-xl leading-relaxed text-ink-soft">
-          {t("subline")}
-        </p>
-        <div className="rise rise-3 flex flex-col items-start gap-4">
-          <Link
-            href={`/${locale}/create`}
-            className="rounded-lg bg-maroon px-8 py-4 text-xl font-semibold text-paper transition-transform hover:bg-maroon-deep active:scale-95"
-          >
-            {t("cta")}
-          </Link>
-          <p className="text-base text-ink-soft">{t("note")}</p>
-        </div>
+        <Hero />
       </section>
-      <footer className="pb-6">
-        <Link href={`/${locale}/privacy`} className="text-base text-ink-soft underline">
-          {t("privacy")}
-        </Link>
+
+      <section id="designs" className="h-sec">
+        <h2 className="h-h2">{t("looksHeading")}</h2>
+        <p className="h-p">{t("looksSub")}</p>
+        <ul className="h-strip">
+          {LOOKS.map((id) => (
+            <li key={id} className="h-look">
+              <Link href={`/${locale}/preview/${id}`} className="h-look-link">
+                <Phone locale={locale} id={id} label={tpl(id)} />
+                <p className="h-look-name">{tpl(id)}</p>
+                <p className="h-look-occ">{occ(OCC[id])} · {t("tapOpen")}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="h-sec h-steps">
+        <h2 className="h-h2">{t("stepsHeading")}</h2>
+        <ol className="h-steplist">
+          {(["s1", "s2", "s3"] as const).map((k, i) => (
+            <li key={k} className="h-step">
+              <span className="h-step-n" aria-hidden>{i + 1}</span>
+              <h3>{t(`${k}t`)}</h3>
+              <p>{t(`${k}d`)}</p>
+            </li>
+          ))}
+        </ol>
+
+      </section>
+
+      <section className="h-sec">
+        <h2 className="h-h2">{demo("title")}</h2>
+        <p className="h-p">{demo("sub")}</p>
+        <RsvpDemo />
+      </section>
+
+      <section className="h-final">
+        <h2 className="h-h2">{t("finalHeading")}</h2>
+        <Link href={`/${locale}/create`} className="h-cta">{t("finalCta")}</Link>
+      </section>
+
+      <footer className="h-foot">
+        <span>{brand("name")}</span>
+        <Link href={`/${locale}/privacy`}>{t("privacy")}</Link>
       </footer>
-    </main>
+    </div>
   );
 }

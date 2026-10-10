@@ -9,7 +9,7 @@ import "../globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
-  title: "GharInvite",
+  title: "weInvite",
   description:
     "Beautiful family invitations on WhatsApp, with household RSVP and a live headcount.",
 };
