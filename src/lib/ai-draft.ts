@@ -8,26 +8,53 @@ import { TEMPLATES } from "@/lib/templates";
 
 const MODEL = process.env.AI_MODEL || "claude-haiku-5-5";
 
-const nullableStr = (max: number) => z.string().trim().max(max).nullish().transform((v) => v || null);
+// The model output is treated leniently: a single off-format field (a stray time format, an
+// out-of-list value) must never reject the whole draft. Every field coerces to a valid value or null,
+// so parsing always succeeds and missing bits simply become questions for the host.
+const str = (max: number) => (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+const inList = <T extends readonly string[]>(vals: T) => (v: unknown): T[number] | null => {
+  if (typeof v !== "string") return null;
+  const s = v.trim().toLowerCase();
+  return ((vals as readonly string[]).find((x) => x.toLowerCase() === s) as T[number]) ?? null;
+};
+const dateStr = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.trim()) ? v.trim() : null);
+const timeStr = (v: unknown): string | null => {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  // "19:00", "7:00 PM", "19:00:00", and colon-less "7pm" / "7 am".
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?/);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = m[2] ?? "00";
+  if (/p\.?m\.?/i.test(s) && h < 12) h += 12;
+  if (/a\.?m\.?/i.test(s) && h === 12) h = 0;
+  if (h > 23 || Number(min) > 59) return null;
+  return `${String(h).padStart(2, "0")}:${min}`;
+};
+const nullableStr = (max: number) => z.any().transform(str(max));
 
 export const extractedSchema = z.object({
-  occasion: z.enum(OCCASIONS).nullish().transform((v) => v ?? null),
+  occasion: z.any().transform(inList(OCCASIONS)),
   title: nullableStr(120),
   hostNames: nullableStr(120),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish().transform((v) => v ?? null),
-  time: z.string().regex(/^\d{2}:\d{2}$/).nullish().transform((v) => v ?? null),
+  date: z.any().transform(dateStr),
+  time: z.any().transform(timeStr),
   venueName: nullableStr(120),
   address: nullableStr(300),
   message: nullableStr(600),
-  templateId: z.enum(TEMPLATES).nullish().transform((v) => v ?? null),
+  templateId: z.any().transform(inList(TEMPLATES)),
   artPrompt: nullableStr(280),
-  styleStated: z.boolean().nullish().transform((v) => !!v),
-  itinerary: z
-    .array(z.object({ name: z.string().trim().min(1).max(80), date: nullableStr(10), time: nullableStr(5), venue: nullableStr(120), note: nullableStr(160) }))
-    .max(8).nullish().transform((v) => v ?? []),
-  story: z
-    .array(z.object({ title: z.string().trim().min(1).max(80), when: nullableStr(40), text: nullableStr(400) }))
-    .max(8).nullish().transform((v) => v ?? []),
+  styleStated: z.any().transform((v) => v === true || v === "true"),
+  itinerary: z.any().transform((v) =>
+    (Array.isArray(v) ? v : []).slice(0, 8)
+      .map((e) => ({ name: str(80)(e?.name), date: str(10)(e?.date), time: str(5)(e?.time), venue: str(120)(e?.venue), note: str(160)(e?.note) }))
+      .filter((e): e is { name: string; date: string | null; time: string | null; venue: string | null; note: string | null } => !!e.name),
+  ),
+  story: z.any().transform((v) =>
+    (Array.isArray(v) ? v : []).slice(0, 8)
+      .map((e) => ({ title: str(80)(e?.title), when: str(40)(e?.when), text: str(400)(e?.text) }))
+      .filter((e): e is { title: string; when: string | null; text: string | null } => !!e.title),
+  ),
 });
 export type Extracted = z.infer<typeof extractedSchema>;
 
@@ -90,8 +117,13 @@ export async function extractInvite(text: string, image?: Image): Promise<Extrac
   if (!anthropicKey && !openaiKey) throw new AiUnavailable("no key");
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const prompt = `Today (India): ${today}\n\nHost's description:\n${text || "(none, see the sample image)"}${image ? "\n\nThe attached image is a sample invite whose look they like. Use it for style, and read any details printed on it." : ""}`;
-  const input = anthropicKey ? await viaAnthropic(anthropicKey, prompt, image) : await viaOpenAI(openaiKey as string, prompt, image);
-  const parsed = extractedSchema.safeParse(input ?? {});
+  const call = () => (anthropicKey ? viaAnthropic(anthropicKey, prompt, image) : viaOpenAI(openaiKey as string, prompt, image));
+  // The model occasionally returns no tool call; retry once before giving up.
+  let input = await call();
+  if (input == null) input = await call();
+  if (input == null) throw new Error("no_tool_call");
+  // The schema is lenient and always parses, but guard just in case.
+  const parsed = extractedSchema.safeParse(input);
   if (!parsed.success) throw new Error("bad model output");
   return parsed.data;
 }
