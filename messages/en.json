@@ -67,7 +67,14 @@
       "people": "{n} people"
     },
     "textSize": "Larger text",
-    "tapOpen": "Tap to open"
+    "tapOpen": "Tap to open",
+    "ai": {
+      "heading": "Make it your way with AI",
+      "placeholder": "Tell us in your own words — e.g. Riya & Kabir's wedding on 12 December at 7pm at Taj Palace, Delhi. Plum and gold, royal and elegant.",
+      "note": "Tip: include the names, date, time and venue so we can fill your invite.",
+      "cta": "Create with AI"
+    },
+    "useThis": "Use this design"
   },
   "Language": {
     "switchTo": "हिन्दी",

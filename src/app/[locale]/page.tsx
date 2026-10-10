@@ -63,6 +63,7 @@ export default function HomePage({ params }: { params: Promise<{ locale: string 
                 <p className="h-look-name">{tpl(id)}</p>
                 <p className="h-look-occ">{occ(OCC[id])} · {t("tapOpen")}</p>
               </Link>
+              <Link href={`/${locale}/create?template=${id}`} className="h-look-use">{t("useThis")}</Link>
             </li>
           ))}
         </ul>

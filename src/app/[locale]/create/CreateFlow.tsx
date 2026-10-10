@@ -9,7 +9,7 @@ import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
 import DownloadCard from "@/components/invite/DownloadCard";
 import TemplatePicker from "@/components/invite/TemplatePicker";
 import { EMPTY_RICH, type Rich } from "@/lib/rich";
-import { DEFAULT_TEMPLATE, TEMPLATE_DEFS, templatesFor, type TemplateId } from "@/lib/templates";
+import { DEFAULT_TEMPLATE, TEMPLATE_DEFS, isTemplate, templatesFor, type TemplateId } from "@/lib/templates";
 import { photoUrl, uploadPhoto } from "@/lib/upload-client";
 import { DEFAULT_THEME, OCCASION_THEME, THEMES, THEME_COLORS, type ThemeId } from "@/lib/themes";
 
@@ -216,9 +216,37 @@ export default function CreateFlow() {
     try { r.start(); } catch { setListening(false); setMicMsg(ai("micFailed")); }
   }
 
-  // One-time restore of an unfinished draft; localStorage only exists in the browser.
+  const [autoDescribe, setAutoDescribe] = useState(false);
+
+  // One-time restore of an unfinished draft, or a design/occasion/prompt chosen on the home page.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
+    // A choice made on the home page (e.g. /create?template=royal, ?occasion=wedding, ?desc=...) wins over a saved draft.
+    const q = new URLSearchParams(window.location.search);
+    const qTemplate = q.get("template");
+    const qOccasion = q.get("occasion");
+    const qDesc = q.get("desc");
+    if (qTemplate && isTemplate(qTemplate)) {
+      const occ = TEMPLATE_DEFS[qTemplate].occasions[0] as Occasion;
+      setDraft((d) => ({ ...d, template: qTemplate, occasion: occ, theme: OCCASION_THEME[occ] ?? d.theme }));
+      setStep("details");
+      setLoaded(true);
+      return;
+    }
+    if (qOccasion && OCCASIONS.includes(qOccasion as (typeof OCCASIONS)[number])) {
+      const occ = qOccasion as Occasion;
+      setDraft((d) => ({ ...d, occasion: occ, template: templatesFor(occ)[1] ?? DEFAULT_TEMPLATE, theme: OCCASION_THEME[occ] ?? d.theme }));
+      setStep("template");
+      setLoaded(true);
+      return;
+    }
+    if (qDesc) {
+      setDesc(qDesc.slice(0, 1500));
+      if (q.get("go") === "1") setAutoDescribe(true);
+      setStep("describe");
+      setLoaded(true);
+      return;
+    }
     try {
       const saved = window.localStorage.getItem(DRAFT_KEY);
       if (saved) {
@@ -235,6 +263,16 @@ export default function CreateFlow() {
     setLoaded(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // If the home page sent a prompt with go=1, run it once everything is ready.
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+  useEffect(() => {
+    if (loaded && autoDescribe && desc.trim()) {
+      setAutoDescribe(false);
+      void describe();
+    }
+  }, [loaded, autoDescribe]);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!loaded || step === "done") return;

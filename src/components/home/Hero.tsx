@@ -21,8 +21,10 @@ export default function Hero() {
   const occasions = useTranslations("Occasions");
   const locale = useLocale();
   const router = useRouter();
+  const ai = useTranslations("Home.ai");
   const [i, setI] = useState(0);
   const [name, setName] = useState("");
+  const [prompt, setPrompt] = useState("");
   const pick = CHOICES[i];
   const shown = name.trim() || live(`names.${pick.occ}`);
 
@@ -39,11 +41,33 @@ export default function Hero() {
     router.push(`/${locale}/create`);
   }
 
+  // Free-text AI start: send the host's words to the create page, which runs the AI automatically.
+  function goAi() {
+    const text = prompt.trim();
+    if (!text) { router.push(`/${locale}/create`); return; }
+    router.push(`/${locale}/create?desc=${encodeURIComponent(text)}&go=1`);
+  }
+
   return (
     <div className="h-hero-grid">
       <div className="h-copy">
         <h1 className="h-title">{t("headline")}</h1>
         <p className="h-sub">{t("subline")}</p>
+
+        <div className="h-ai" role="group" aria-label={ai("heading")}>
+          <p className="h-ai-h">✨ {ai("heading")}</p>
+          <textarea
+            id="h-ai"
+            className="h-ai-box"
+            rows={3}
+            maxLength={600}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder={ai("placeholder")}
+          />
+          <p className="h-ai-note">{ai("note")}</p>
+          <button type="button" onClick={goAi} className="h-cta h-cta-ai">{ai("cta")}</button>
+        </div>
 
         <div className="h-try" role="group" aria-label={live("question")}>
           <p className="h-try-q">{live("question")}</p>
@@ -62,7 +86,6 @@ export default function Hero() {
             <a href="#designs" className="h-link">{t("ctaSee")}</a>
           </div>
         </div>
-        <p className="h-note">{t("note")}</p>
       </div>
 
       <div className="h-phones">
