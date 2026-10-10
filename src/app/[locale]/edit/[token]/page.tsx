@@ -9,6 +9,8 @@ import { formatWhenShort, requestUrl, toLocalInputs } from "@/lib/events";
 import { richOf } from "@/lib/rich";
 import { isTemplate } from "@/lib/templates";
 import { themeOf } from "@/lib/themes";
+import AppBar from "@/components/app/AppBar";
+import DownloadCard from "@/components/invite/DownloadCard";
 import AutoRefresh from "./AutoRefresh";
 import DeleteInvite from "./DeleteInvite";
 import EditForm from "./EditForm";
@@ -79,7 +81,9 @@ export default async function EditPage({
   const local = toLocalInputs(event.starts_at, event.timezone);
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-10">
+    <>
+    <AppBar />
+    <main className="app-big mx-auto flex max-w-2xl flex-col gap-6 px-6 py-8">
       <h1 className="font-display text-4xl text-maroon">{t("heading")}</h1>
       <p className="text-lg text-ink-soft">{t("intro")}</p>
 
@@ -158,6 +162,8 @@ export default async function EditPage({
         rows={householdRows}
       />
 
+      <DownloadCard slug={event.slug} locale={locale} />
+
       <EditForm
         token={token}
         initial={{
@@ -177,5 +183,6 @@ export default async function EditPage({
       />
       <DeleteInvite token={token} locale={locale} />
     </main>
+    </>
   );
 }

@@ -5,7 +5,7 @@ import { getTranslations } from "next-intl/server";
 import RsvpForm from "@/app/[locale]/e/[slug]/RsvpForm";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { formatTimeOnly, intlLocale, mapLink, type PublicEvent } from "@/lib/events";
-import { richOf } from "@/lib/rich";
+import { monogram, richOf } from "@/lib/rich";
 import { photoPublicUrl } from "@/lib/supabase/admin";
 import { templateFontClass } from "@/lib/template-fonts";
 import { templateOf } from "@/lib/templates";
@@ -61,6 +61,7 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
           <Link href={otherLocalePath} hrefLang={locale === "en" ? "hi" : "en"} className="lang-chip">{t("switchTo")}</Link>
         </div>
         <div className="hero-body">
+          <p className="hero-mono" aria-hidden>{monogram(event.title).join(" · ")}</p>
           <p className="hero-kicker">{occasions(event.occasion)}</p>
           <h1 className="hero-title">{event.title}</h1>
           <p className="hero-hosts">{t("hostedBy", { names: event.host_names })}</p>

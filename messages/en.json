@@ -121,7 +121,11 @@
     },
     "draftRestored": "We restored your unfinished invite.",
     "themeHeading": "Choose a look",
-    "continue": "Continue"
+    "continue": "Continue",
+    "stepsLabel": "Steps",
+    "step1": "Describe",
+    "step2": "Design",
+    "step3": "Details"
   },
   "Created": {
     "heading": "Your invite is ready",
@@ -304,7 +308,10 @@
     "fullPreview": "Full preview",
     "selected": "Selected",
     "classicSample": "Simple one-page card",
-    "classicNote": "Quick and light, works on any phone"
+    "classicNote": "Quick and light, works on any phone",
+    "jharokha": "Jharokha",
+    "rangeela": "Rangeela",
+    "ivory": "Ivory"
   },
   "Editor": {
     "heading": "Make it richer (optional)",
@@ -358,6 +365,27 @@
       "image": "We could not use that picture. Try another."
     },
     "speak": "Speak instead of typing",
-    "listening": "Listening…"
+    "listening": "Listening…",
+    "art": {
+      "heading": "Make a picture with AI (optional)",
+      "open": "Make artwork with AI",
+      "label": "Describe the picture you want",
+      "placeholder": "Marigold garlands and glowing diyas, warm evening light",
+      "make": "Make my picture",
+      "working": "Painting… this takes about 20 seconds",
+      "cancel": "Cancel",
+      "failed": "We could not make the picture right now. You can add your own photo instead.",
+      "busy": "Too many tries. Please wait a minute."
+    }
+  },
+  "Card": {
+    "heading": "Save as a picture",
+    "intro": "Download your invite as an image to post on WhatsApp status, send in a chat, or print.",
+    "story": "WhatsApp status",
+    "storyHint": "Tall, 9:16",
+    "square": "Chat or Instagram",
+    "squareHint": "Square",
+    "print": "Print",
+    "printHint": "A5 card"
   }
 }

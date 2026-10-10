@@ -169,3 +169,53 @@ html[lang="hi"] .tpl .hero-title { text-transform: none; letter-spacing: 0; line
 .tpl-night .rsvp-wrap { --maroon: #a3256b; }
 .tpl-dark .rsvp-wrap .rounded-3xl { border-color: transparent; background: transparent; }
 html[lang="hi"] .hero-date-rest, html[lang="hi"] .tpl .event-month { letter-spacing: 0 !important; text-transform: none !important; }
+
+/* monogram: initials, shown by templates that use it */
+.hero-mono { display: none; font-family: var(--fs); line-height: 1; color: var(--saffron); }
+html[lang="hi"] .hero-mono { font-family: var(--nf-display-hi), serif; }
+
+/* ---------- JHAROKHA (plum + gold arched window with monogram) ---------- */
+.tpl-jharokha .hero { background: radial-gradient(100% 70% at 50% 20%, #4a2360 0%, var(--paper) 75%); }
+.tpl-jharokha .hero::before { content: ""; position: absolute; z-index: 1; left: 50%; top: 64px; bottom: 56px; width: min(88%, 360px); transform: translateX(-50%);
+  border: 2px solid var(--maroon); border-radius: 999px 999px 18px 18px; box-shadow: 0 0 0 7px var(--paper), 0 0 0 9px color-mix(in srgb, var(--maroon) 60%, transparent);
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.06), transparent 60%), repeating-radial-gradient(circle at 50% 100%, transparent 0 22px, rgba(230,194,122,.06) 22px 23px); pointer-events: none; }
+.tpl-jharokha .hero-body { padding: 70px 40px 90px; max-width: 380px; }
+.tpl-jharokha .hero-mono { display: block; font-size: 3.4rem; margin-bottom: 6px; }
+.tpl-jharokha .hero-kicker { letter-spacing: .3em; font-size: 14px; }
+.tpl-jharokha .hero-title { font-size: clamp(1.7rem, 7.2vw, 2.5rem); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
+.tpl-jharokha .hero-hosts { font-size: 1.3rem; color: var(--ink); }
+.tpl-jharokha .hero-date-day { color: var(--ink); font-size: 3.6rem; }
+.tpl-jharokha .btn-main { background: var(--maroon); color: #2b1237; }
+.tpl-jharokha .sec-title { text-transform: uppercase; letter-spacing: .14em; font-size: clamp(1.4rem, 6vw, 1.9rem); }
+.tpl-jharokha .event-card { border-radius: 999px 999px 16px 16px / 36px 36px 16px 16px; background: transparent; border-color: color-mix(in srgb, var(--maroon) 55%, transparent); }
+.tpl-jharokha .count-cell { border-radius: 999px 999px 10px 10px; background: transparent; }
+.tpl-jharokha .story-photo, .tpl-jharokha .gallery-img { border-radius: 999px 999px 14px 14px; }
+html[lang="hi"] .tpl-jharokha .hero-title { text-transform: none; letter-spacing: 0; }
+
+/* ---------- RANGEELA (bold pink / teal / mustard, patterned frame + oval) ---------- */
+.tpl-rangeela .hero { background: var(--paper); }
+.tpl-rangeela .hero::before { content: ""; position: absolute; z-index: 1; inset: 10px; border: 16px solid transparent; border-radius: 6px; pointer-events: none;
+  background: linear-gradient(var(--paper), var(--paper)) padding-box, repeating-conic-gradient(#d61f7a 0 25%, #1c9a8c 0 50%, #f5b52e 0 75%, #fff6e6 0 100%) 0 0/32px 32px border-box; }
+.tpl-rangeela .hero::after { content: ""; position: absolute; z-index: 1; left: 50%; top: 96px; bottom: 76px; width: min(82%, 340px); transform: translateX(-50%); border: 3px solid var(--maroon); border-radius: 50%; background: color-mix(in srgb, #1c9a8c 10%, var(--paper)); box-shadow: inset 0 0 0 7px var(--paper), inset 0 0 0 9px color-mix(in srgb, var(--maroon) 50%, transparent); pointer-events: none; }
+.tpl-rangeela .hero-body { padding: 96px 64px 90px; max-width: 400px; gap: 8px; }
+.tpl-rangeela .hero-kicker { background: #1c9a8c; color: #fff; padding: 3px 14px; border-radius: 999px; letter-spacing: .12em; font-size: 14px; }
+.tpl-rangeela .hero-title { font-size: clamp(1.6rem, 7vw, 2.3rem); font-weight: 700; font-style: italic; }
+.tpl-rangeela .hero-hosts { font-size: 1.15rem; }
+.tpl-rangeela .hero-date-day { font-size: 3.4rem; color: #1c9a8c; }
+.tpl-rangeela .btn-main { box-shadow: 4px 4px 0 var(--ink); padding: 12px 24px; font-size: 1rem; }
+.tpl-rangeela .event-card { border: 3px solid var(--ink); border-radius: 22px; background: #fff; box-shadow: 4px 4px 0 var(--maroon); }
+.tpl-rangeela .count-cell { border: 3px solid var(--ink); background: #fff; border-radius: 16px; box-shadow: 3px 3px 0 #1c9a8c; }
+
+/* ---------- IVORY (ivory paper, green + rose-gold, floral vine borders, monogram ring) ---------- */
+.tpl-ivory .hero { background: var(--paper); }
+.tpl-ivory .hero::before, .tpl-ivory .hero::after { content: ""; position: absolute; z-index: 1; top: 0; bottom: 0; width: 44px; pointer-events: none; opacity: .9;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='96'%3E%3Cpath d='M22 0C8 24 36 48 22 96' stroke='%236f8f72' stroke-width='2' fill='none'/%3E%3Ccircle cx='13' cy='26' r='6' fill='%23d88a96'/%3E%3Cellipse cx='32' cy='52' rx='8' ry='4' fill='%238fb08f' transform='rotate(30 32 52)'/%3E%3Ccircle cx='30' cy='78' r='5' fill='%23e8b4bc'/%3E%3Cellipse cx='11' cy='64' rx='7' ry='3.5' fill='%238fb08f' transform='rotate(-30 11 64)'/%3E%3C/svg%3E") 0 0/44px 96px repeat-y; }
+.tpl-ivory .hero::before { left: 6px; }
+.tpl-ivory .hero::after { right: 6px; transform: scaleX(-1); }
+.tpl-ivory .hero-body { padding-inline: 56px; }
+.tpl-ivory .hero-mono { display: grid; place-items: center; width: 96px; height: 96px; border: 2px solid var(--saffron); border-radius: 50%; font-size: 1.9rem; color: var(--maroon); box-shadow: 0 0 0 6px var(--paper), 0 0 0 7px color-mix(in srgb, var(--saffron) 60%, transparent); margin-bottom: 14px; white-space: nowrap; }
+.tpl-ivory .hero-title { font-style: italic; font-size: clamp(2rem, 8.5vw, 3.2rem); }
+.tpl-ivory .hero-hosts { font-size: 1.4rem; }
+.tpl-ivory .hero-date-day { color: var(--saffron); }
+.tpl-ivory .event-card { border-radius: 18px; background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
+.tpl-ivory .count-cell { background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }

@@ -6,7 +6,7 @@ import { THEMES } from "@/lib/themes";
 // Sample details so a template can be previewed without a database (preview route + template gallery).
 void THEMES;
 const OCC: Record<string, string> = {
-  royal: "wedding", bloom: "wedding", griha: "housewarming", pooja: "pooja", confetti: "birthday", blossom: "baby", night: "party",
+  royal: "wedding", bloom: "wedding", griha: "housewarming", pooja: "pooja", confetti: "birthday", blossom: "baby", night: "party", jharokha: "wedding", rangeela: "wedding", ivory: "wedding",
 };
 const EN: Record<string, [string, string]> = {
   royal: ["Aarav & Meera", "The Sharma and Kapoor families"],
@@ -16,6 +16,9 @@ const EN: Record<string, [string, string]> = {
   confetti: ["Riya turns 7", "Riya's mummy and papa"],
   blossom: ["Welcome, little one", "Neha and Kabir"],
   night: ["Karan's 30th", "Karan and friends"],
+  jharokha: ["Sheshank & Sakshi", "The Mehra and Arora families"],
+  rangeela: ["Riya & Dev", "The Kapoor and Singh families"],
+  ivory: ["Ansh & Shruti", "The Rao and Iyer families"],
 };
 const HI: Record<string, [string, string]> = {
   royal: ["आरव और मीरा", "शर्मा और कपूर परिवार"],
@@ -25,6 +28,9 @@ const HI: Record<string, [string, string]> = {
   confetti: ["रिया हुई 7 साल की", "रिया के मम्मी-पापा"],
   blossom: ["स्वागत है, नन्हे मेहमान", "नेहा और कबीर"],
   night: ["करण का 30वाँ जन्मदिन", "करण और दोस्त"],
+  jharokha: ["शेषांक और साक्षी", "मेहरा और अरोड़ा परिवार"],
+  rangeela: ["रिया और देव", "कपूर और सिंह परिवार"],
+  ivory: ["अंश और श्रुति", "राव और अय्यर परिवार"],
 };
 
 export function sampleEvent(template: string, locale: string): { event: PublicEvent; rich: Rich } {

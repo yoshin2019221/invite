@@ -72,7 +72,7 @@ Rules:
 - Never invent facts. If the title, host, date, time or venue is not stated, use null. Do not guess a date from nothing.
 - Resolve relative dates ("next Saturday", "15 Nov") using today's date given below.
 - "evening" alone is not a time; leave time null unless a clock time is given or clearly implied (e.g. "7 baje").
-- Designs: royal = dark wedding with gold; bloom = soft pink wedding or baby; griha = housewarming with marigold; pooja = devotional, saffron on dark red; confetti = bright birthday or kids party; blossom = soft blue baby; night = dark neon party. Pick the closest to the colours or mood described, or to the sample image. Set styleStated=true only if they gave a look or image.
+- Designs: royal = dark wedding with gold; jharokha = plum and gold arched-window wedding with monogram; rangeela = bold pink, teal and mustard patterned, playful wedding or party; ivory = ivory with green and rose floral borders, elegant wedding, baby or housewarming; bloom = soft pink wedding or baby; griha = housewarming with marigold; pooja = devotional, saffron on dark red; confetti = bright birthday or kids party; blossom = soft blue baby; night = dark neon party. Pick the closest to the colours or mood described, or to the sample image. Set styleStated=true only if they gave a look or image.
 - itinerary only when they list several functions; story only when they give story moments.
 - message: write one warm, natural line or two for guests, in the same language as the description.`;
 

@@ -18,9 +18,9 @@ function Phone({ locale, id, label, className = "" }: { locale: string; id: stri
   );
 }
 
-const LOOKS = ["royal", "bloom", "griha", "pooja", "confetti", "blossom", "night"] as const;
+const LOOKS = ["royal", "jharokha", "rangeela", "ivory", "bloom", "griha", "pooja", "confetti", "blossom", "night"] as const;
 const OCC: Record<(typeof LOOKS)[number], string> = {
-  royal: "wedding", bloom: "wedding", griha: "housewarming", pooja: "pooja", confetti: "birthday", blossom: "baby", night: "party",
+  royal: "wedding", jharokha: "wedding", rangeela: "wedding", ivory: "wedding", bloom: "wedding", griha: "housewarming", pooja: "pooja", confetti: "birthday", blossom: "baby", night: "party",
 };
 
 export default function HomePage({ params }: { params: Promise<{ locale: string }> }) {

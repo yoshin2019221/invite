@@ -98,3 +98,28 @@ html[lang="hi"] .font-display {
   --paper: #fdf1f3; --paper-deep: #f8dde2; --ink: #3d1a26; --ink-soft: #744859;
   --maroon: #a3294f; --maroon-deep: #7d1b3b; --saffron: #bd6119;
 }
+
+/* Bigger text for older eyes (set by the "AA" button); rem-based sizes scale with it. */
+html[data-size="lg"] { font-size: 112.5%; }
+html[data-size="xl"] { font-size: 125%; }
+
+/* Working screens (create, edit): big, clear, easy to tap. */
+.app-bar { max-width: 42rem; margin: 0 auto; }
+.app-garland { height: 30px; margin: 0 -9999px; background:
+  radial-gradient(circle at 12px 9px, #f5a623 0 6px, #c97a10 6px 7px, transparent 7.5px) 0 0/24px 26px repeat-x,
+  radial-gradient(circle at 12px 21px, #4f8a4a 0 3.5px, transparent 4px) 0 0/24px 26px repeat-x; }
+.app-bar-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px 0; }
+.app-brand { font-family: var(--nf-display), var(--nf-display-hi), serif; font-size: 1.7rem; color: var(--maroon); }
+.app-bar-r { display: flex; align-items: center; gap: 10px; }
+.app-lang { border: 1.5px solid color-mix(in srgb, var(--maroon) 55%, transparent); color: var(--maroon); border-radius: 999px; padding: 8px 18px; font-size: 1rem; min-height: 44px; display: inline-flex; align-items: center; }
+.app-bar .h-size { color: var(--maroon); border-color: color-mix(in srgb, var(--maroon) 55%, transparent); background: transparent; }
+.app-big input:not([type="checkbox"]), .app-big textarea, .app-big select { min-height: 56px; border-radius: 14px; }
+.app-big button, .app-big a[class*="border-2"] { min-height: 52px; }
+.app-big button[class*="bg-maroon"] { border-radius: 999px; }
+.app-big :focus-visible { outline: 3px solid #f5a623; outline-offset: 3px; }
+.app-steps { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.app-step { display: flex; align-items: center; gap: 8px; font-size: 1rem; color: var(--ink-soft); }
+.app-step b { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--maroon) 15%, transparent); color: var(--maroon); font-weight: 600; }
+.app-step[aria-current="step"] { color: var(--ink); font-weight: 600; }
+.app-step[aria-current="step"] b { background: var(--maroon); color: var(--paper); }
+.app-step-sep { flex: 1; height: 2px; background: color-mix(in srgb, var(--maroon) 20%, transparent); min-width: 12px; }

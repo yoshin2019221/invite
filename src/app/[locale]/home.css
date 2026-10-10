@@ -130,8 +130,6 @@ html[lang="hi"] .h-h2 { line-height: 1.3; }
 @media (min-width: 860px) { .demo { grid-template-columns: 1fr 1fr; align-items: stretch; } .h-hero-grid { align-items: start; } .live-phone { width: 270px; height: 584px; } .live-screen .tpl { transform: scale(.6769); } }
 
 /* larger text mode (kids can read, elders can read) */
-html[data-size="lg"] { font-size: 112.5%; }
-html[data-size="xl"] { font-size: 125%; }
 .home button, .home a { -webkit-tap-highlight-color: transparent; }
 .home :focus-visible { outline: 3px solid #f5a623; outline-offset: 3px; }
 @media (max-width: 859px) {

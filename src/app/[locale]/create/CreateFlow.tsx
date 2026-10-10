@@ -6,6 +6,7 @@ import Link from "next/link";
 import { OCCASIONS } from "@/lib/validation";
 import { compressImage } from "@/lib/image";
 import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
+import DownloadCard from "@/components/invite/DownloadCard";
 import TemplatePicker from "@/components/invite/TemplatePicker";
 import { EMPTY_RICH, type Rich } from "@/lib/rich";
 import { DEFAULT_TEMPLATE, TEMPLATE_DEFS, templatesFor, type TemplateId } from "@/lib/templates";
@@ -79,6 +80,32 @@ export default function CreateFlow() {
   const [aiMsg, setAiMsg] = useState<string | null>(null);
   const [questions, setQuestions] = useState<string[]>([]);
   const sampleRef = useRef<HTMLInputElement>(null);
+  const [artOpen, setArtOpen] = useState(false);
+  const [artText, setArtText] = useState("");
+  const [artBusy, setArtBusy] = useState(false);
+  const [artMsg, setArtMsg] = useState<string | null>(null);
+
+  async function makeArt() {
+    if (artText.trim().length < 3) return;
+    setArtBusy(true);
+    setArtMsg(null);
+    try {
+      const res = await fetch("/api/v1/ai/artwork", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: artText.trim(), occasion: draft.occasion ?? undefined }),
+      });
+      if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
+      if (!res.ok) { setArtMsg(ai("art.failed")); return; }
+      const { path } = (await res.json()) as { path: string };
+      update("photoPath", path);
+      setArtOpen(false);
+    } catch {
+      setArtMsg(ai("art.failed"));
+    } finally {
+      setArtBusy(false);
+    }
+  }
   const [listening, setListening] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -291,6 +318,18 @@ export default function CreateFlow() {
 
   if (!loaded) return null;
 
+  const stepNo = step === "describe" || step === "ask" ? 1 : step === "occasion" || step === "template" ? 2 : step === "details" ? 3 : 0;
+  const stepsBar = stepNo ? (
+    <ol className="app-steps" aria-label={t("stepsLabel")}>
+      {[t("step1"), t("step2"), t("step3")].map((name, n) => (
+        <li key={name} className="contents">
+          {n > 0 && <span aria-hidden className="app-step-sep" />}
+          <span className="app-step" aria-current={stepNo === n + 1 ? "step" : undefined}><b>{n + 1}</b>{name}</span>
+        </li>
+      ))}
+    </ol>
+  ) : null;
+
   if (step === "done" && result) {
     const origin = window.location.origin;
     const guestUrl = `${origin}/${locale}/e/${result.slug}`;
@@ -330,6 +369,8 @@ export default function CreateFlow() {
           </div>
         </section>
 
+        <DownloadCard slug={result.slug} locale={locale} />
+
         <section className="flex flex-col gap-3 rounded-lg border-2 border-saffron/60 bg-saffron/10 p-5">
           <p className="text-lg font-medium">{created("editLink")}</p>
           <p className="break-all text-base">{editUrl}</p>
@@ -349,6 +390,7 @@ export default function CreateFlow() {
   if (step === "describe") {
     return (
       <div className="flex flex-col gap-6">
+        {stepsBar}
         <h1 className="font-display text-4xl text-maroon">{ai("heading")}</h1>
         <p className="text-lg text-ink-soft">{ai("intro")}</p>
         <textarea
@@ -397,6 +439,7 @@ export default function CreateFlow() {
     const ready = (!q.has("occasion") || draft.occasion) && (!q.has("title") || draft.title.trim()) && (!q.has("hostNames") || draft.hostNames.trim()) && (!q.has("date") || draft.date) && (!q.has("time") || draft.time);
     return (
       <div className="flex flex-col gap-6">
+        {stepsBar}
         <h1 className="font-display text-4xl text-maroon">{ai("askHeading")}</h1>
         <p className="text-lg text-ink-soft">{ai("askIntro")}</p>
         {q.has("occasion") && (
@@ -446,6 +489,7 @@ export default function CreateFlow() {
   if (step === "occasion") {
     return (
       <div className="flex flex-col gap-6">
+        {stepsBar}
         <h1 className="font-display text-4xl text-maroon">{t("occasionHeading")}</h1>
         <div className="grid grid-cols-2 gap-4">
           {OCCASIONS.map((o) => (
@@ -478,6 +522,7 @@ export default function CreateFlow() {
   if (step === "template") {
     return (
       <div className="flex flex-col gap-6">
+        {stepsBar}
         <div className="flex items-center justify-between gap-4">
           <h1 className="font-display text-4xl text-maroon">{tpl("heading")}</h1>
           <button type="button" onClick={() => setStep("occasion")} className="rounded-md border border-maroon/30 px-4 py-2 text-base text-maroon">
@@ -505,6 +550,7 @@ export default function CreateFlow() {
       }}
       noValidate
     >
+      {stepsBar}
       <div className="flex items-center justify-between gap-4">
         <h1 className="font-display text-4xl text-maroon">{t("detailsHeading")}</h1>
         <button
@@ -673,6 +719,27 @@ export default function CreateFlow() {
               ? t("fields.photoChange")
               : t("fields.photo")}
         </button>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
+        <p className="text-lg font-medium">{ai("art.heading")}</p>
+        {!artOpen ? (
+          <button type="button" onClick={() => setArtOpen(true)} className="self-start rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95">
+            ✨ {ai("art.open")}
+          </button>
+        ) : (
+          <>
+            <label htmlFor="art" className="text-base text-ink-soft">{ai("art.label")}</label>
+            <textarea id="art" rows={2} maxLength={300} className={inputClass} value={artText} onChange={(e) => setArtText(e.target.value)} placeholder={ai("art.placeholder")} />
+            <div className="flex flex-wrap gap-3">
+              <button type="button" disabled={artBusy || artText.trim().length < 3} onClick={() => void makeArt()} className="rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">
+                {artBusy ? ai("art.working") : ai("art.make")}
+              </button>
+              <button type="button" onClick={() => setArtOpen(false)} className="px-4 py-4 text-lg text-maroon underline">{ai("art.cancel")}</button>
+            </div>
+          </>
+        )}
+        {artMsg && <p role="alert" className="text-lg font-medium text-red-800">{artMsg}</p>}
       </div>
 
       {isRich && (

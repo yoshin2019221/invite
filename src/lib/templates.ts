@@ -10,6 +10,9 @@ export const TEMPLATES = [
   "confetti",
   "blossom",
   "night",
+  "jharokha",
+  "rangeela",
+  "ivory",
 ] as const;
 export type TemplateId = (typeof TEMPLATES)[number];
 export const DEFAULT_TEMPLATE: TemplateId = "classic";
@@ -79,6 +82,24 @@ export const TEMPLATE_DEFS: Record<TemplateId, TemplateDef> = {
     colors: c("#120a1e", "#1e1230", "#f5ecff", "#c9b8e2", "#ff7ab8", "#d4478f", "#e6c27a"),
     lottie: "party-glitter", music: "ambient-playful",
     display: "var(--font-cinzel)", body: "var(--font-jost)", dark: true,
+  },
+  jharokha: {
+    id: "jharokha", rich: true, occasions: ["wedding"],
+    colors: c("#2b1237", "#3b1a4a", "#f7ead2", "#d9c3e0", "#e6c27a", "#b8913f", "#e6c27a"),
+    lottie: "gold-sparkles", music: "ambient-royal",
+    display: "var(--font-cinzel)", body: "var(--font-cormorant)", script: "var(--font-script)", dark: true,
+  },
+  rangeela: {
+    id: "rangeela", rich: true, occasions: ["wedding", "birthday", "party"],
+    colors: c("#fff6e6", "#ffe7bd", "#3a1030", "#6e3a5e", "#d61f7a", "#a3125b", "#1c9a8c"),
+    lottie: "confetti", music: "ambient-playful",
+    display: "var(--font-playfair)", body: "var(--font-jost)", script: "var(--font-script)",
+  },
+  ivory: {
+    id: "ivory", rich: true, occasions: ["wedding", "baby", "housewarming"],
+    colors: c("#fbf6ea", "#f0e6cf", "#2f3a30", "#5b6b5d", "#3f6048", "#2b4533", "#b76e79"),
+    lottie: "rose-petals", music: "ambient-soft",
+    display: "var(--font-playfair)", body: "var(--font-jost)", script: "var(--font-script)",
   },
 };
 

@@ -52,3 +52,11 @@ export function richPhotoPaths(details: unknown): string[] {
   const r = richOf(details);
   return [...r.gallery, ...r.story.flatMap((s) => (s.photo ? [s.photo] : []))];
 }
+
+// Initials for the monogram, e.g. "Aarav & Meera's wedding" -> ["A", "M"]; "आरव और मीरा" -> ["आ", "म"].
+export function monogram(title: string): string[] {
+  const parts = title.split(/\s*(?:&|\+|\band\b|\bweds\b|और)\s*/i).map((x) => x.trim()).filter(Boolean);
+  const first = (x: string) => Array.from(x.replace(/^[^\p{L}]+/u, ""))[0] ?? "";
+  const out = parts.slice(0, 2).map(first).filter(Boolean);
+  return out.length ? out : [first(title)].filter(Boolean);
+}
