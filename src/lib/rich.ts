@@ -31,6 +31,9 @@ export const richSchema = z.object({
   gallery: z.array(photo).max(8).default([]),
   countdown: z.boolean().default(true),
   music: z.boolean().default(true),
+  // When true, the hero photo is a complete AI-designed invitation card (title, date etc. are already
+  // drawn into it), so the invite shows it full-bleed instead of layering text over it again.
+  heroFullCard: z.boolean().default(false),
 });
 export type Rich = z.infer<typeof richSchema>;
 
@@ -40,6 +43,7 @@ export const EMPTY_RICH: Rich = {
   gallery: [],
   countdown: true,
   music: true,
+  heroFullCard: false,
 };
 
 export function richOf(details: unknown): Rich {

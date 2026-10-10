@@ -76,8 +76,8 @@ Rules:
 - "evening" alone is not a time; leave time null unless a clock time is given or clearly implied (e.g. "7 baje").
 - Designs: royal = dark wedding with gold; jharokha = plum and gold arched-window wedding with monogram; rangeela = bold pink, teal and mustard patterned, playful wedding or party; ivory = ivory with green and rose floral borders, elegant wedding, baby or housewarming; bloom = soft pink wedding or baby; griha = housewarming with marigold; pooja = devotional, saffron on dark red; confetti = bright birthday or kids party; blossom = soft blue baby; night = dark neon party. Pick the closest to the colours or mood described, or to the sample image. Set styleStated=true only if they gave a look or image.
 - itinerary only when they list several functions; story only when they give story moments.
-- artPrompt: always write it, in English, even if the host wrote Hindi.
-- message: write one warm, natural line or two for guests, in the same language as the description.`;
+- artPrompt: always write it, in English, even if the host wrote Hindi. If a sample image is attached, make artPrompt a rich description of the sample\'s visual style (palette, motifs, borders, texture, mood) and NEVER include any names, dates or text from it.
+- message: one or two warm lines for guests. Write it in the SAME language as the host\'s description: English description means English message, Hindi means Hindi, Hinglish means Hinglish. Never switch language.`;
 
 type Image = { mediaType: "image/jpeg" | "image/png" | "image/webp"; data: string };
 

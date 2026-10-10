@@ -51,9 +51,25 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   const forward = `https://wa.me/?text=${encodeURIComponent(`${g("forwardText", { title: event.title })}\n${inviteUrl}`)}`;
   const map = mapLink(event);
   const showCountdown = rich.countdown;
+  const fullCard = rich.heroFullCard && !!photo;
 
   return (
     <div style={style} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass}`} data-template={def.id}>
+      {fullCard ? (
+        <header className="hero hero-cardfull">
+          <div className="hero-top">
+            <Link href={otherLocalePath} hrefLang={locale === "en" ? "hi" : "en"} className="lang-chip">{t("switchTo")}</Link>
+          </div>
+          <div className="hero-cardfull-img">
+            {/* The card already shows names, date and venue drawn into the artwork. */}
+            <img src={photo!} alt={event.title} />
+          </div>
+          <div className="hero-cardfull-cta">
+            <a href="#rsvp" className="btn-main">{t("replyNow")}</a>
+          </div>
+          <a href="#details" className="hero-scroll" aria-label={t("heroScroll")}><span /></a>
+        </header>
+      ) : (
       <header className="hero">
         {photo && <div className="hero-photo"><img src={photo} alt="" /></div>}
         {def.lottie && <LottieBg name={def.lottie} />}
@@ -74,6 +90,7 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
         </div>
         <a href="#details" className="hero-scroll" aria-label={t("heroScroll")}><span /></a>
       </header>
+      )}
 
       <main id="details" className="flow">
         {event.message && (

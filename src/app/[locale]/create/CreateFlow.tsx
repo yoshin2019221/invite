@@ -91,6 +91,55 @@ export default function CreateFlow() {
   const [artDone, setArtDone] = useState(false);
 
   // Paints artwork from a short English description. If the host already added their own photo, that one stays.
+  // Readable date/time for the card text, in the chosen language.
+  function fmtDate(date: string, time?: string) {
+    const d = new Date(`${date}T${time ?? "12:00"}:00+05:30`);
+    return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }).format(d);
+  }
+  function fmtTime(date: string, time: string) {
+    const d = new Date(`${date}T${time}:00+05:30`);
+    return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }).format(d);
+  }
+  type CardDetails = { title?: string; hostNames?: string; occasion?: string; dateText?: string; timeText?: string; venue?: string; message?: string; style?: string; language: "en" | "hi" };
+  function cardFromDraft(): CardDetails {
+    return {
+      title: draft.title || undefined,
+      hostNames: draft.hostNames || undefined,
+      occasion: draft.occasion ?? undefined,
+      dateText: draft.date ? fmtDate(draft.date, draft.time || undefined) : undefined,
+      timeText: draft.date && draft.time ? fmtTime(draft.date, draft.time) : undefined,
+      venue: [draft.venueName, draft.address].filter(Boolean).join(", ") || undefined,
+      message: draft.message || undefined,
+      style: artText || undefined,
+      language: locale,
+    };
+  }
+
+  // Designs a complete invitation card (names, date, venue drawn into the art) in the sample's style.
+  async function makeCard(card: CardDetails) {
+    setArtBusy(true);
+    setArtMsg(null);
+    setArtDone(false);
+    try {
+      const res = await fetch("/api/v1/ai/artwork", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ card, reference: sample ? { mediaType: sample.mediaType, data: sample.data } : undefined }),
+      });
+      if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
+      if (!res.ok) { setArtMsg(ai("art.failed")); return; }
+      const { path } = (await res.json()) as { path: string };
+      setDraft((cur) => ({ ...cur, photoPath: path, rich: { ...cur.rich, heroFullCard: true } }));
+      setArtDone(true);
+      setArtOpen(false);
+    } catch {
+      setArtMsg(ai("art.failed"));
+    } finally {
+      setArtBusy(false);
+    }
+  }
+
+  // Plain decorative background (no text) from a short phrase; the invite lays its own text over it.
   async function makeArt(prompt: string, occasion?: string) {
     if (prompt.trim().length < 3) return;
     setArtBusy(true);
@@ -100,12 +149,12 @@ export default function CreateFlow() {
       const res = await fetch("/api/v1/ai/artwork", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), occasion: occasion ?? draft.occasion ?? undefined }),
+        body: JSON.stringify({ prompt: prompt.trim(), occasion: occasion ?? draft.occasion ?? undefined, reference: sample ? { mediaType: sample.mediaType, data: sample.data } : undefined }),
       });
       if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
       if (!res.ok) { setArtMsg(ai("art.failed")); return; }
       const { path } = (await res.json()) as { path: string };
-      setDraft((cur) => ({ ...cur, photoPath: path }));
+      setDraft((cur) => ({ ...cur, photoPath: path, rich: { ...cur.rich, heroFullCard: false } }));
       setArtDone(true);
       setArtOpen(false);
     } catch {
@@ -317,10 +366,21 @@ export default function CreateFlow() {
       }));
       setQuestions(qs);
       setStep(qs.length ? "ask" : "details");
-      // Start painting in the background while the host answers the last questions.
-      const art = d.artPrompt ?? (d.occasion ? `${d.occasion} celebration, warm festive decoration` : null);
-      if (art) setArtText(art);
-      if (autoArt && art && !draft.photoPath) void makeArt(art, d.occasion ?? undefined);
+      // Start designing the full invitation card in the background while the host answers the last questions.
+      if (d.artPrompt) setArtText(d.artPrompt);
+      if (autoArt && (d.title || d.occasion) && !draft.photoPath) {
+        void makeCard({
+          title: d.title ?? undefined,
+          hostNames: d.hostNames ?? undefined,
+          occasion: d.occasion ?? undefined,
+          dateText: d.date ? fmtDate(d.date, d.time ?? undefined) : undefined,
+          timeText: d.date && d.time ? fmtTime(d.date, d.time) : undefined,
+          venue: [d.venueName, d.address].filter(Boolean).join(", ") || undefined,
+          message: d.message ?? undefined,
+          style: d.artPrompt ?? undefined,
+          language: locale,
+        });
+      }
     } catch {
       setAiMsg(ai("errors.unavailable"));
     } finally {
@@ -752,17 +812,20 @@ export default function CreateFlow() {
       <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
         <p className="text-lg font-medium">{ai("art.heading")}</p>
         {artBusy && <p role="status" className="text-lg font-medium text-maroon">🎨 {ai("art.painting")}</p>}
-        {artDone && !artBusy && <p role="status" className="text-base text-ink-soft">{ai("art.ready")}</p>}
+        {artDone && !artBusy && <p role="status" className="text-base text-ink-soft">{sample ? ai("art.readySample") : ai("art.ready")}</p>}
+        <button type="button" disabled={artBusy} onClick={() => void makeCard(cardFromDraft())} className="self-start rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">
+          {artBusy ? ai("art.working") : artDone ? ai("art.again") : ai("art.open")}
+        </button>
         {!artOpen ? (
-          <button type="button" disabled={artBusy} onClick={() => setArtOpen(true)} className="self-start rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95">
-            ✨ {artDone ? ai("art.again") : ai("art.open")}
+          <button type="button" disabled={artBusy} onClick={() => setArtOpen(true)} className="self-start text-base text-maroon underline">
+            {ai("art.plainOpen")}
           </button>
         ) : (
           <>
             <label htmlFor="art" className="text-base text-ink-soft">{ai("art.label")}</label>
             <textarea id="art" rows={2} maxLength={300} className={inputClass} value={artText} onChange={(e) => setArtText(e.target.value)} placeholder={ai("art.placeholder")} />
             <div className="flex flex-wrap gap-3">
-              <button type="button" disabled={artBusy || artText.trim().length < 3} onClick={() => void makeArt(artText)} className="rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">
+              <button type="button" disabled={artBusy || artText.trim().length < 3} onClick={() => void makeArt(artText)} className="rounded-lg border-2 border-maroon px-6 py-4 text-lg font-semibold text-maroon active:scale-95 disabled:opacity-50">
                 {artBusy ? ai("art.working") : ai("art.make")}
               </button>
               <button type="button" onClick={() => setArtOpen(false)} className="px-4 py-4 text-lg text-maroon underline">{ai("art.cancel")}</button>

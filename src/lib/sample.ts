@@ -41,7 +41,7 @@ export function sampleEvent(template: string, locale: string): { event: PublicEv
   const iso = (d: number, h: number) => { const x = new Date(start.getTime() + d * 86_400_000); x.setUTCHours(h, 0, 0, 0); return x.toISOString(); };
   const hi = locale === "hi";
   const rich: Rich = {
-    countdown: true, music: true, gallery: [],
+    countdown: true, music: true, gallery: [], heroFullCard: false,
     story: [
       { title: hi ? "पहली मुलाक़ात" : "We met", when: "2019", text: hi ? "एक दोस्त की शादी में चाय पर हुई बातचीत से शुरू हुई कहानी।" : "A chai at a friend's wedding turned into a very long conversation." },
       { title: hi ? "हाँ कह दिया" : "She said yes", when: "2025", text: hi ? "परिवार की मौजूदगी में, बालकनी में, सूरज ढलते हुए।" : "On the balcony at sunset, with both families peeking from the kitchen." },

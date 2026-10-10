@@ -367,20 +367,25 @@
     "speak": "Speak instead of typing",
     "listening": "Listening…",
     "art": {
-      "heading": "Make a picture with AI (optional)",
-      "open": "Make artwork with AI",
-      "label": "Describe the picture you want",
+      "heading": "Design the invitation card with AI (optional)",
+      "open": "Design my invitation card",
+      "label": "Describe a plain background (no text)",
       "placeholder": "Marigold garlands and glowing diyas, warm evening light",
-      "make": "Make my picture",
-      "working": "Painting… this takes about 20 seconds",
+      "make": "Make background",
+      "working": "Designing your card… about 30 seconds",
       "cancel": "Cancel",
       "failed": "We could not make the picture right now. You can add your own photo instead.",
       "busy": "Too many tries. Please wait a minute.",
-      "auto": "Also paint matching artwork for my invite",
-      "painting": "Painting your artwork… about 20 seconds",
-      "ready": "Your artwork is ready. You can paint another or add your own photo.",
-      "again": "Paint another"
-    }
+      "auto": "Also design a matching invitation card for me",
+      "painting": "Designing your invitation card… about 30 seconds",
+      "ready": "Your invitation card is ready. You can design a new one or add your own photo.",
+      "again": "Design a new card",
+      "readySample": "Your invitation card is ready, in the style of your sample. You can design a new one or add your own photo.",
+      "plainOpen": "Or make a plain background instead"
+    },
+    "micDenied": "The microphone is blocked. Tap the lock icon next to the web address, allow the microphone, then try again.",
+    "micNone": "We did not hear anything. Tap the button and speak clearly.",
+    "micFailed": "Speaking is not working in this browser. Please type instead, or use Chrome."
   },
   "Card": {
     "heading": "Save as a picture",
