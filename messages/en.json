@@ -375,7 +375,11 @@
       "working": "Painting… this takes about 20 seconds",
       "cancel": "Cancel",
       "failed": "We could not make the picture right now. You can add your own photo instead.",
-      "busy": "Too many tries. Please wait a minute."
+      "busy": "Too many tries. Please wait a minute.",
+      "auto": "Also paint matching artwork for my invite",
+      "painting": "Painting your artwork… about 20 seconds",
+      "ready": "Your artwork is ready. You can paint another or add your own photo.",
+      "again": "Paint another"
     }
   },
   "Card": {

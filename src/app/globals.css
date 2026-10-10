@@ -105,7 +105,8 @@ html[data-size="xl"] { font-size: 125%; }
 
 /* Working screens (create, edit): big, clear, easy to tap. */
 .app-bar { max-width: 42rem; margin: 0 auto; }
-.app-garland { height: 30px; margin: 0 -9999px; background:
+html, body { overflow-x: clip; }
+.app-garland { height: 30px; width: 100vw; margin-left: calc(50% - 50vw); background:
   radial-gradient(circle at 12px 9px, #f5a623 0 6px, #c97a10 6px 7px, transparent 7.5px) 0 0/24px 26px repeat-x,
   radial-gradient(circle at 12px 21px, #4f8a4a 0 3.5px, transparent 4px) 0 0/24px 26px repeat-x; }
 .app-bar-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px 0; }

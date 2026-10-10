@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
       body: JSON.stringify({
-        model: process.env.IMAGE_MODEL || "gpt-image-1",
+        model: process.env.IMAGE_MODEL || "gpt-image-2",
         prompt: GUARD + parsed.data.prompt + (parsed.data.occasion ? ` (for a ${parsed.data.occasion} invitation, Indian family celebration)` : ""),
         size: "1024x1024",
         quality: "low",

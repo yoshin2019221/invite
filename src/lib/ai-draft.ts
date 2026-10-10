@@ -20,6 +20,7 @@ export const extractedSchema = z.object({
   address: nullableStr(300),
   message: nullableStr(600),
   templateId: z.enum(TEMPLATES).nullish().transform((v) => v ?? null),
+  artPrompt: nullableStr(280),
   styleStated: z.boolean().nullish().transform((v) => !!v),
   itinerary: z
     .array(z.object({ name: z.string().trim().min(1).max(80), date: nullableStr(10), time: nullableStr(5), venue: nullableStr(120), note: nullableStr(160) }))
@@ -59,6 +60,7 @@ const TOOL = {
       address: { type: ["string", "null"] },
       message: { type: ["string", "null"], description: "A warm 1-2 sentence note to guests, written for this event, in the host's language." },
       templateId: { type: ["string", "null"], enum: [...TEMPLATES, null], description: "Closest design to the look the host wants (colours, mood, or the sample image). Null if no style hint." },
+      artPrompt: { type: ["string", "null"], description: "In English, 1-2 sentences describing background artwork for this invite: motifs, colours, mood, setting (e.g. \"Marigold garlands and brass diyas, warm saffron and maroon tones, soft evening glow\"). Base it on the occasion and any look the host described. No people, no text." },
       styleStated: { type: "boolean", description: "true only if the host described a look, colours, mood, or gave a sample image." },
       itinerary: { type: "array", items: { type: "object", properties: { name: { type: "string" }, date: { type: ["string", "null"] }, time: { type: ["string", "null"] }, venue: { type: ["string", "null"] }, note: { type: ["string", "null"] } }, required: ["name"] } },
       story: { type: "array", items: { type: "object", properties: { title: { type: "string" }, when: { type: ["string", "null"] }, text: { type: ["string", "null"] } }, required: ["title"] } },
@@ -74,6 +76,7 @@ Rules:
 - "evening" alone is not a time; leave time null unless a clock time is given or clearly implied (e.g. "7 baje").
 - Designs: royal = dark wedding with gold; jharokha = plum and gold arched-window wedding with monogram; rangeela = bold pink, teal and mustard patterned, playful wedding or party; ivory = ivory with green and rose floral borders, elegant wedding, baby or housewarming; bloom = soft pink wedding or baby; griha = housewarming with marigold; pooja = devotional, saffron on dark red; confetti = bright birthday or kids party; blossom = soft blue baby; night = dark neon party. Pick the closest to the colours or mood described, or to the sample image. Set styleStated=true only if they gave a look or image.
 - itinerary only when they list several functions; story only when they give story moments.
+- artPrompt: always write it, in English, even if the host wrote Hindi.
 - message: write one warm, natural line or two for guests, in the same language as the description.`;
 
 type Image = { mediaType: "image/jpeg" | "image/png" | "image/webp"; data: string };

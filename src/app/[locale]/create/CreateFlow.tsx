@@ -85,20 +85,26 @@ export default function CreateFlow() {
   const [artBusy, setArtBusy] = useState(false);
   const [artMsg, setArtMsg] = useState<string | null>(null);
 
-  async function makeArt() {
-    if (artText.trim().length < 3) return;
+  const [autoArt, setAutoArt] = useState(true);
+  const [artDone, setArtDone] = useState(false);
+
+  // Paints artwork from a short English description. If the host already added their own photo, that one stays.
+  async function makeArt(prompt: string, occasion?: string) {
+    if (prompt.trim().length < 3) return;
     setArtBusy(true);
     setArtMsg(null);
+    setArtDone(false);
     try {
       const res = await fetch("/api/v1/ai/artwork", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: artText.trim(), occasion: draft.occasion ?? undefined }),
+        body: JSON.stringify({ prompt: prompt.trim(), occasion: occasion ?? draft.occasion ?? undefined }),
       });
       if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
       if (!res.ok) { setArtMsg(ai("art.failed")); return; }
       const { path } = (await res.json()) as { path: string };
-      update("photoPath", path);
+      setDraft((cur) => ({ ...cur, photoPath: path }));
+      setArtDone(true);
       setArtOpen(false);
     } catch {
       setArtMsg(ai("art.failed"));
@@ -266,7 +272,7 @@ export default function CreateFlow() {
       const { draft: d, questions: qs } = (await res.json()) as {
         draft: {
           occasion: Occasion | null; title: string | null; hostNames: string | null; date: string | null; time: string | null;
-          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null;
+          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null; artPrompt: string | null;
           itinerary: { name: string; date: string | null; time: string | null; venue: string | null; note: string | null }[];
           story: { title: string; when: string | null; text: string | null }[];
         };
@@ -299,6 +305,10 @@ export default function CreateFlow() {
       }));
       setQuestions(qs);
       setStep(qs.length ? "ask" : "details");
+      // Start painting in the background while the host answers the last questions.
+      const art = d.artPrompt ?? (d.occasion ? `${d.occasion} celebration, warm festive decoration` : null);
+      if (art) setArtText(art);
+      if (autoArt && art && !draft.photoPath) void makeArt(art, d.occasion ?? undefined);
     } catch {
       setAiMsg(ai("errors.unavailable"));
     } finally {
@@ -421,6 +431,10 @@ export default function CreateFlow() {
           </div>
           <p className="text-base text-ink-soft">{ai("sampleHint")}</p>
         </div>
+        <label className="flex items-center gap-3 text-lg font-medium">
+          <input type="checkbox" checked={autoArt} onChange={(e) => setAutoArt(e.target.checked)} className="h-6 w-6 accent-maroon" />
+          <span>✨ {ai("art.auto")}</span>
+        </label>
         {aiMsg && <p role="alert" className="text-lg font-medium text-red-800">{aiMsg}</p>}
         <button type="button" disabled={thinking || (!desc.trim() && !sample)} onClick={() => void describe()} className="rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper transition-transform active:scale-95 disabled:opacity-50">
           {thinking ? ai("thinking") : ai("go")}
@@ -723,16 +737,18 @@ export default function CreateFlow() {
 
       <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
         <p className="text-lg font-medium">{ai("art.heading")}</p>
+        {artBusy && <p role="status" className="text-lg font-medium text-maroon">🎨 {ai("art.painting")}</p>}
+        {artDone && !artBusy && <p role="status" className="text-base text-ink-soft">{ai("art.ready")}</p>}
         {!artOpen ? (
-          <button type="button" onClick={() => setArtOpen(true)} className="self-start rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95">
-            ✨ {ai("art.open")}
+          <button type="button" disabled={artBusy} onClick={() => setArtOpen(true)} className="self-start rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95">
+            ✨ {artDone ? ai("art.again") : ai("art.open")}
           </button>
         ) : (
           <>
             <label htmlFor="art" className="text-base text-ink-soft">{ai("art.label")}</label>
             <textarea id="art" rows={2} maxLength={300} className={inputClass} value={artText} onChange={(e) => setArtText(e.target.value)} placeholder={ai("art.placeholder")} />
             <div className="flex flex-wrap gap-3">
-              <button type="button" disabled={artBusy || artText.trim().length < 3} onClick={() => void makeArt()} className="rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">
+              <button type="button" disabled={artBusy || artText.trim().length < 3} onClick={() => void makeArt(artText)} className="rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">
                 {artBusy ? ai("art.working") : ai("art.make")}
               </button>
               <button type="button" onClick={() => setArtOpen(false)} className="px-4 py-4 text-lg text-maroon underline">{ai("art.cancel")}</button>
