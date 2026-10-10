@@ -85,6 +85,8 @@ export default function CreateFlow() {
   const [artBusy, setArtBusy] = useState(false);
   const [artMsg, setArtMsg] = useState<string | null>(null);
 
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const [micMsg, setMicMsg] = useState<string | null>(null);
   const [autoArt, setAutoArt] = useState(true);
   const [artDone, setArtDone] = useState(false);
 
@@ -119,7 +121,7 @@ export default function CreateFlow() {
 
   // Speak instead of typing (Chrome and Android). The words are added to the description box.
   function speak() {
-    type Rec = { lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; onerror: () => void; start: () => void };
+    type Rec = { lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; onerror: (e: { error?: string }) => void; start: () => void };
     const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) return;
@@ -131,9 +133,13 @@ export default function CreateFlow() {
       setDesc((d) => `${d ? d + " " : ""}${said}`.slice(0, 1500));
     };
     r.onend = () => setListening(false);
-    r.onerror = () => setListening(false);
+    r.onerror = (e) => {
+      setListening(false);
+      setMicMsg(e.error === "not-allowed" || e.error === "service-not-allowed" ? ai("micDenied") : e.error === "no-speech" ? ai("micNone") : ai("micFailed"));
+    };
+    setMicMsg(null);
     setListening(true);
-    r.start();
+    try { r.start(); } catch { setListening(false); setMicMsg(ai("micFailed")); }
   }
 
   // One-time restore of an unfinished draft; localStorage only exists in the browser.
@@ -261,6 +267,7 @@ export default function CreateFlow() {
     if (!desc.trim() && !sample) return;
     setThinking(true);
     setAiMsg(null);
+    setAiNote(null);
     try {
       const res = await fetch("/api/v1/ai/draft", {
         method: "POST",
@@ -268,7 +275,12 @@ export default function CreateFlow() {
         body: JSON.stringify({ text: desc.trim(), image: sample ? { mediaType: sample.mediaType, data: sample.data } : undefined }),
       });
       if (res.status === 429) { setAiMsg(ai("errors.busy")); return; }
-      if (!res.ok) { setAiMsg(ai("errors.unavailable")); return; }
+      if (!res.ok) {
+        const info = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
+        setAiMsg(ai("errors.unavailable"));
+        setAiNote(`${res.status} ${info.error ?? ""}${info.code ? ` ${info.code}` : ""}`.trim());
+        return;
+      }
       const { draft: d, questions: qs } = (await res.json()) as {
         draft: {
           occasion: Occasion | null; title: string | null; hostNames: string | null; date: string | null; time: string | null;
@@ -417,6 +429,7 @@ export default function CreateFlow() {
             <span aria-hidden>🎤</span>{listening ? ai("listening") : ai("speak")}
           </button>
         )}
+        {micMsg && <p role="alert" className="text-lg font-medium text-red-800">{micMsg}</p>}
         <div className="flex flex-col items-start gap-3">
           {sample && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -436,6 +449,7 @@ export default function CreateFlow() {
           <span>✨ {ai("art.auto")}</span>
         </label>
         {aiMsg && <p role="alert" className="text-lg font-medium text-red-800">{aiMsg}</p>}
+        {aiNote && <p className="text-sm text-ink-soft">Technical note: {aiNote}</p>}
         <button type="button" disabled={thinking || (!desc.trim() && !sample)} onClick={() => void describe()} className="rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper transition-transform active:scale-95 disabled:opacity-50">
           {thinking ? ai("thinking") : ai("go")}
         </button>

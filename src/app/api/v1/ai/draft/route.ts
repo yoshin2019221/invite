@@ -22,6 +22,6 @@ export async function POST(request: Request) {
   } catch (e) {
     if (e instanceof AiUnavailable) return NextResponse.json({ error: "ai_unavailable" }, { status: 503 });
     console.error("ai draft failed", e);
-    return NextResponse.json({ error: "ai_failed" }, { status: 502 });
+    return NextResponse.json({ error: "ai_failed", code: e instanceof Error ? e.message : "unknown" }, { status: 502 });
   }
 }

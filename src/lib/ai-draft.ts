@@ -97,7 +97,11 @@ export async function extractInvite(text: string, image?: Image): Promise<Extrac
     body: JSON.stringify({ model: MODEL, max_tokens: 1500, system: GUIDE, tools: [TOOL], tool_choice: { type: "tool", name: TOOL.name }, messages: [{ role: "user", content }] }),
     signal: AbortSignal.timeout(25_000),
   });
-  if (!res.ok) throw new Error(`model ${res.status}`);
+  if (!res.ok) {
+    const detail = (await res.text().catch(() => "")).slice(0, 300);
+    console.error("anthropic error", res.status, detail);
+    throw new Error(`anthropic_${res.status}`);
+  }
   const body = (await res.json()) as { content?: { type: string; input?: unknown }[] };
   const block = body.content?.find((b) => b.type === "tool_use");
   const parsed = extractedSchema.safeParse(block?.input ?? {});
