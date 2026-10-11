@@ -57,6 +57,8 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
     <div style={style} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass}`} data-template={def.id}>
       {fullCard ? (
         <header className="hero hero-cardfull">
+          {/* The card's own colours, blurred, become the backdrop so the frame always blends with it. */}
+          <div className="hero-cardfull-bg" style={{ backgroundImage: `url("${photo}")` }} aria-hidden />
           <div className="hero-top">
             <Link href={otherLocalePath} hrefLang={locale === "en" ? "hi" : "en"} className="lang-chip">{t("switchTo")}</Link>
           </div>

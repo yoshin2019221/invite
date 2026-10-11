@@ -77,6 +77,10 @@ export const updateEventSchema = z.object({
   theme: z.enum(THEMES),
   template: z.enum(TEMPLATES).optional(),
   rich: richSchema.optional(),
+  photoPath: z
+    .string()
+    .regex(/^drafts\/[0-9a-f-]{36}\.(jpg|png|webp)$/)
+    .optional(),
 });
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 

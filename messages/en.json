@@ -132,7 +132,8 @@
     "stepsLabel": "Steps",
     "step1": "Describe",
     "step2": "Design",
-    "step3": "Details"
+    "step3": "Details",
+    "save": "Save changes"
   },
   "Created": {
     "heading": "Your invite is ready",
@@ -143,7 +144,8 @@
     "copied": "Copied",
     "whatsapp": "Share on WhatsApp",
     "view": "View invite",
-    "shareText": "You are invited: {title}"
+    "shareText": "You are invited: {title}",
+    "editMore": "Edit details"
   },
   "Guest": {
     "hostedBy": "Hosted by {names}",
@@ -351,7 +353,7 @@
     "heading": "Describe your invite",
     "intro": "Tell us about your celebration in your own words. English, Hindi or Hinglish all work. We will fill in the rest.",
     "placeholder": "Aarav's 5th birthday on 15 November at 5 pm at our home in Dwarka. Bright and colourful with balloons.",
-    "addSample": "Add a sample invite you like",
+    "addSample": "Upload a picture",
     "changeSample": "Change sample",
     "removeSample": "Remove",
     "sampleHint": "Optional. We match its look and read any details on it.",
@@ -399,7 +401,10 @@
     "micNone": "We did not hear anything. Tap the button and speak clearly.",
     "micFailed": "Speaking is not working in this browser. Please type instead, or use Chrome.",
     "micStop": "Stop",
-    "micHint": "Speak clearly. Tap Stop when you are done."
+    "micHint": "Speak clearly. Tap Stop when you are done.",
+    "picHeading": "Have an invite you love? Start from a picture",
+    "picDesc": "Got an invitation you received or saw somewhere? Upload the picture, add your own details, and we'll make you one in the same style.",
+    "picNote": "We use only its look — colours, patterns and style. Your names, date and venue are yours; the original's text is never copied."
   },
   "Card": {
     "heading": "Save as a picture",

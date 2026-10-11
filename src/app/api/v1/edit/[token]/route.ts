@@ -41,6 +41,7 @@ export async function PATCH(
       map_url: i.mapUrl ?? null,
       message: i.message ?? null,
       theme: i.theme,
+      ...(i.photoPath ? { photo_path: i.photoPath } : {}),
       ...(i.template ? { template: i.template } : {}),
       ...(i.rich ? { details: { rich: i.rich } } : {}),
     })

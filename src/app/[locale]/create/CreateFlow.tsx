@@ -320,26 +320,38 @@ export default function CreateFlow() {
     }
     setBusy(true);
     setMessage(null);
+    const payload = {
+      occasion: draft.occasion,
+      title: draft.title.trim(),
+      hostNames: draft.hostNames.trim(),
+      startsAt: `${draft.date}T${draft.time}:00+05:30`,
+      timezone: "Asia/Kolkata",
+      venueName: draft.venueName.trim() || undefined,
+      address: draft.address.trim() || undefined,
+      mapUrl: draft.mapUrl.trim() || undefined,
+      message: draft.message.trim() || undefined,
+      language: locale,
+      photoPath: draft.photoPath ?? undefined,
+      theme: draft.theme,
+      template: draft.template,
+      rich: TEMPLATE_DEFS[draft.template].rich ? draft.rich : undefined,
+    };
     try {
+      if (result) {
+        // Already created — went back, edited, and saved again: update the SAME invite, no duplicate.
+        const res = await fetch(`/api/v1/edit/${result.editToken}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("update failed");
+        setStep("done");
+        return;
+      }
       const res = await fetch("/api/v1/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          occasion: draft.occasion,
-          title: draft.title.trim(),
-          hostNames: draft.hostNames.trim(),
-          startsAt: `${draft.date}T${draft.time}:00+05:30`,
-          timezone: "Asia/Kolkata",
-          venueName: draft.venueName.trim() || undefined,
-          address: draft.address.trim() || undefined,
-          mapUrl: draft.mapUrl.trim() || undefined,
-          message: draft.message.trim() || undefined,
-          language: locale,
-          photoPath: draft.photoPath ?? undefined,
-          theme: draft.theme,
-          template: draft.template,
-          rich: TEMPLATE_DEFS[draft.template].rich ? draft.rich : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("create failed");
       const data = (await res.json()) as { slug: string; editToken: string };
@@ -347,7 +359,7 @@ export default function CreateFlow() {
         const list = JSON.parse(window.localStorage.getItem(EVENTS_KEY) ?? "[]");
         list.push({ ...data, title: draft.title.trim(), createdAt: Date.now() });
         window.localStorage.setItem(EVENTS_KEY, JSON.stringify(list));
-        window.localStorage.removeItem(DRAFT_KEY);
+        // Keep the draft so "Back to details" and a page refresh both restore everything.
       } catch {
         // ignore
       }
@@ -494,6 +506,10 @@ export default function CreateFlow() {
       <div className="flex flex-col gap-8">
         <h1 className="font-display text-4xl text-maroon">{created("heading")}</h1>
 
+        <button type="button" onClick={() => setStep("details")} className="self-start rounded-lg border-2 border-maroon px-6 py-3 text-lg font-semibold text-maroon active:scale-95">
+          ← {created("editMore")}
+        </button>
+
         <section className="flex flex-col items-center gap-3">
           <p className="self-start text-lg font-medium">{created("previewHeading")}</p>
           <div className="w-full max-w-[360px] overflow-hidden rounded-2xl border-2 border-maroon/20 shadow-lg">
@@ -577,19 +593,25 @@ export default function CreateFlow() {
         )}
         {listening && <p className="text-base text-ink-soft">{ai("micHint")}</p>}
         {micMsg && <p role="alert" className="text-lg font-medium text-red-800">{micMsg}</p>}
-        <div className="flex flex-col items-start gap-3">
-          {sample && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={sample.preview} alt="" className="h-40 rounded-lg object-cover" />
-          )}
+        <div className="flex flex-col gap-3 rounded-2xl border-2 border-dashed border-maroon/40 bg-white/50 p-5">
+          <p className="text-lg font-semibold text-maroon">🖼️ {ai("picHeading")}</p>
+          <p className="text-base text-ink-soft">{ai("picDesc")}</p>
           <input ref={sampleRef} type="file" accept="image/*" className="hidden" onChange={(e) => void onSample(e.target.files?.[0])} />
-          <div className="flex flex-wrap items-center gap-4">
-            <button type="button" onClick={() => sampleRef.current?.click()} className="rounded-lg border-2 border-maroon/40 px-5 py-3 text-lg font-medium text-maroon active:scale-95">
-              {sample ? ai("changeSample") : ai("addSample")}
+          {sample ? (
+            <div className="flex flex-col items-start gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={sample.preview} alt="" className="h-44 rounded-lg object-cover shadow" />
+              <div className="flex flex-wrap items-center gap-4">
+                <button type="button" onClick={() => sampleRef.current?.click()} className="rounded-lg border-2 border-maroon px-5 py-3 text-lg font-medium text-maroon active:scale-95">{ai("changeSample")}</button>
+                <button type="button" onClick={() => setSample(null)} className="text-base text-red-800 underline">{ai("removeSample")}</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => sampleRef.current?.click()} className="self-start rounded-lg border-2 border-maroon px-6 py-4 text-lg font-semibold text-maroon active:scale-95">
+              {ai("addSample")}
             </button>
-            {sample && <button type="button" onClick={() => setSample(null)} className="text-base text-red-800 underline">{ai("removeSample")}</button>}
-          </div>
-          <p className="text-base text-ink-soft">{ai("sampleHint")}</p>
+          )}
+          <p className="text-sm text-ink-soft">{ai("picNote")}</p>
         </div>
         <label className="flex items-center gap-3 text-lg font-medium">
           <input type="checkbox" checked={autoArt} onChange={(e) => setAutoArt(e.target.checked)} className="h-6 w-6 accent-maroon" />
@@ -953,7 +975,7 @@ export default function CreateFlow() {
         disabled={busy || photoBusy}
         className="rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper transition-transform active:scale-95 disabled:opacity-60"
       >
-        {busy ? t("creating") : t("submit")}
+        {busy ? t("creating") : result ? t("save") : t("submit")}
       </button>
     </form>
   );

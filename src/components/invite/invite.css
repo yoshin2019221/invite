@@ -20,9 +20,40 @@
 .hero-cardfull::after { content: ""; position: absolute; inset: 0; z-index: 0; background: radial-gradient(120% 80% at 50% 42%, transparent 40%, rgba(0,0,0,0.22) 100%); }
 .hero-cardfull-img { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; padding: 18px 16px 6px; min-height: 0; }
 .hero-cardfull-img img { max-width: min(540px, 100%); max-height: 80dvh; width: auto; height: auto; border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.34), 0 2px 8px rgba(0,0,0,.18); }
-.hero-cardfull-cta { position: relative; z-index: 2; display: flex; justify-content: center; padding: 14px 20px 6px; }
+.hero-cardfull-cta { position: relative; z-index: 2; display: flex; justify-content: center; padding: 14px 20px 6px; animation: fadeUp 1s ease 0.9s both; }
 .hero-cardfull .hero-top { position: relative; z-index: 2; }
 .hero-cardfull .hero-scroll { z-index: 2; }
+
+/* ----- cinematic motion for the AI card invite ----- */
+/* the blurred backdrop drifts slowly (Ken Burns) */
+.hero-cardfull-bg { animation: kenburns 28s ease-in-out infinite alternate; }
+/* the card fades + rises in like a title card, then breathes gently */
+.hero-cardfull-img { animation: cardIn 1.2s cubic-bezier(.2,.75,.2,1) both; }
+.hero-cardfull-img img { animation: cardFloat 7s ease-in-out 1.3s infinite; will-change: transform; }
+/* a soft light sweeps across the card once it has settled */
+.hero-cardfull-shine { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.hero-cardfull-shine::before { content: ""; position: absolute; top: -40%; left: -60%; width: 40%; height: 180%; transform: rotate(18deg); background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); filter: blur(6px); animation: sweep 6.5s ease-in-out 1.6s infinite; }
+/* drifting sparkles */
+.hero-cardfull-spark { position: absolute; z-index: 1; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle, #fff 0%, rgba(255,240,200,.9) 40%, transparent 70%); opacity: 0; animation: twinkle 5s ease-in-out infinite; }
+@keyframes kenburns { from { transform: scale(1.14) translate(0,0); } to { transform: scale(1.3) translate(-2.5%,-2%); } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(26px) scale(.955); } to { opacity: 1; transform: none; } }
+@keyframes cardFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes sweep { 0% { left: -60%; } 55%,100% { left: 130%; } }
+@keyframes twinkle { 0%,100% { opacity: 0; transform: scale(.6); } 50% { opacity: .9; transform: scale(1.15); } }
+
+/* staggered entrance for the standard (template) hero */
+.hero-body > * { animation: fadeUp .9s cubic-bezier(.2,.7,.2,1) both; }
+.hero-body > :nth-child(1) { animation-delay: .15s; }
+.hero-body > :nth-child(2) { animation-delay: .28s; }
+.hero-body > :nth-child(3) { animation-delay: .41s; }
+.hero-body > :nth-child(4) { animation-delay: .54s; }
+.hero-body > :nth-child(5) { animation-delay: .67s; }
+.hero-body > :nth-child(6) { animation-delay: .80s; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cardfull-bg, .hero-cardfull-img, .hero-cardfull-img img, .hero-cardfull-cta, .hero-cardfull-shine::before, .hero-cardfull-spark, .hero-body > * { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
 .hero-photo { position: absolute; inset: 0; z-index: 0; }
 .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
 .hero-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 55%, transparent), color-mix(in srgb, var(--paper) 88%, transparent) 70%); }
