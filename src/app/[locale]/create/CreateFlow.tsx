@@ -126,7 +126,7 @@ export default function CreateFlow() {
       const res = await fetch("/api/v1/ai/artwork", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ card, reference: sample ? { mediaType: sample.mediaType, data: sample.data } : undefined }),
+        body: JSON.stringify({ card }),
       });
       if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
       if (!res.ok) { setArtMsg(ai("art.failed")); return; }

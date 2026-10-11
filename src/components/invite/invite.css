@@ -13,10 +13,16 @@
 .hero { position: relative; min-height: 100dvh; display: flex; flex-direction: column; isolation: isolate; overflow: hidden; text-align: center;
   background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--saffron) 22%, var(--paper)) 0%, var(--paper) 62%); }
 /* AI-designed full card: the whole invitation is one image (text already drawn in). */
-.hero-cardfull { justify-content: flex-start; min-height: 100dvh; padding-bottom: 24px; }
-.hero-cardfull-img { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px 14px; min-height: 0; }
-.hero-cardfull-img img { max-width: min(560px, 100%); max-height: 82dvh; width: auto; height: auto; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.18); }
-.hero-cardfull-cta { position: relative; z-index: 2; display: flex; justify-content: center; padding: 10px 20px 6px; }
+.hero-cardfull { position: relative; justify-content: flex-start; min-height: 100dvh; padding-bottom: 28px; overflow: hidden; background: #efe9df; }
+/* the card image itself, blown up and blurred, so the backdrop shares the card's palette */
+.hero-cardfull-bg { position: absolute; inset: -8%; z-index: 0; background-size: cover; background-position: center; filter: blur(46px) saturate(1.12) brightness(0.96); transform: scale(1.18); }
+/* a soft wash to deepen the edges and keep the sharp card the focus */
+.hero-cardfull::after { content: ""; position: absolute; inset: 0; z-index: 0; background: radial-gradient(120% 80% at 50% 42%, transparent 40%, rgba(0,0,0,0.22) 100%); }
+.hero-cardfull-img { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; padding: 18px 16px 6px; min-height: 0; }
+.hero-cardfull-img img { max-width: min(540px, 100%); max-height: 80dvh; width: auto; height: auto; border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.34), 0 2px 8px rgba(0,0,0,.18); }
+.hero-cardfull-cta { position: relative; z-index: 2; display: flex; justify-content: center; padding: 14px 20px 6px; }
+.hero-cardfull .hero-top { position: relative; z-index: 2; }
+.hero-cardfull .hero-scroll { z-index: 2; }
 .hero-photo { position: absolute; inset: 0; z-index: 0; }
 .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
 .hero-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 55%, transparent), color-mix(in srgb, var(--paper) 88%, transparent) 70%); }

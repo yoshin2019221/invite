@@ -132,19 +132,23 @@ export async function POST(request: Request) {
 
   try {
     let b64: string | undefined;
-    const cardText = isCard ? cardPrompt(card, !!reference) : BG_GUARD + prompt + (occasion ? ` (for a ${occasion} invitation, Indian family celebration)` : "");
 
-    if (reference) {
+    if (isCard) {
+      // Always GENERATE a fresh card from the design brief. The sample's look reaches us as the
+      // style text the describe step wrote from it — we never edit/stamp the sample image itself,
+      // because that makes the model keep the sample's own names, dates and layout.
+      b64 = await generate(cardPrompt(card, false));
+    } else if (reference) {
+      // Background mode with a reference image: an edit is fine (no text to protect).
+      const bg = BG_GUARD + (prompt ?? "");
       try {
-        b64 = await editFromReference(cardText, reference);
+        b64 = await editFromReference(bg, reference);
       } catch (e) {
-        // The edit endpoint can reject some images/models. Rather than fail, fall back to a plain
-        // generation — the sample's look still comes through via the style text the describe step wrote.
         console.error("edit failed, falling back to generate", e instanceof Error ? e.message : e);
-        b64 = await generate(isCard ? cardPrompt(card, false) : cardText);
+        b64 = await generate(bg);
       }
     } else {
-      b64 = await generate(cardText);
+      b64 = await generate(BG_GUARD + prompt + (occasion ? ` (for a ${occasion} invitation, Indian family celebration)` : ""));
     }
 
     if (!b64) return NextResponse.json({ error: "ai_failed" }, { status: 502 });
