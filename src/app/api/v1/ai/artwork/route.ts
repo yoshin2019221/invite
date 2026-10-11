@@ -36,6 +36,8 @@ const bodySchema = z.object({
   card: cardSchema.optional(),
   // A sample invite the host likes, used as a style reference.
   reference: z.object({ mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().max(3_000_000) }).optional(),
+  // "replace": reuse the reference picture AS the design — keep its artwork, erase its old text, write ours.
+  mode: z.enum(["style", "replace"]).optional(),
 });
 
 const BG_GUARD =
@@ -72,6 +74,28 @@ function cardPrompt(c: z.infer<typeof cardSchema>, hasSample: boolean): string {
   );
 }
 
+// Reuse an existing invitation picture: keep the artwork exactly, swap only the wording.
+function replacePrompt(c: z.infer<typeof cardSchema>): string {
+  const lang = c.language === "hi" ? "Hindi (Devanagari script)" : "English";
+  const lines: string[] = [];
+  if (c.title) lines.push(`Headline / names: ${c.title}`);
+  if (c.hostNames) lines.push(`Hosted by: ${c.hostNames}`);
+  if (c.dateText) lines.push(`Date: ${c.dateText}`);
+  if (c.timeText) lines.push(`Time: ${c.timeText}`);
+  if (c.venue) lines.push(`Venue: ${c.venue}`);
+  if (c.message) lines.push(`Short line: ${c.message}`);
+  return (
+    `The attached image is an existing invitation card. Produce the SAME invitation design: keep the identical background, artwork, illustrations, ` +
+    `colours, borders, ornaments, layout and lettering style, so it looks like the same designer's card.\n` +
+    `Completely ERASE all of the old text on it (every name, date, time, venue, phone number, hashtag and line of wording) — no trace of the old words may remain. ` +
+    `Repaint the background behind the erased text so it looks clean and natural.\n` +
+    `Then write ONLY the following new details, in the same places and in the same style of lettering the original used for such text, spelled EXACTLY as written, in ${lang}:\n` +
+    lines.join("\n") +
+    `\nEvery word must be sharp, clearly legible and well placed. No watermarks, no extra or placeholder text.` +
+    (c.designPrompt ? `\nExtra instruction from the host: ${c.designPrompt}` : "")
+  );
+}
+
 export async function POST(request: Request) {
   const ip = clientIp(request);
   if (!rateLimit(`art:min:${ip}`, 3, 60_000) || !rateLimit(`art:hour:${ip}`, 8, 3_600_000)) {
@@ -79,7 +103,7 @@ export async function POST(request: Request) {
   }
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
-  const { prompt, occasion, card, reference } = parsed.data;
+  const { prompt, occasion, card, reference, mode } = parsed.data;
   if (!card && !prompt) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
 
   const key = process.env.OPENAI_API_KEY;
@@ -133,7 +157,10 @@ export async function POST(request: Request) {
   try {
     let b64: string | undefined;
 
-    if (isCard) {
+    if (isCard && mode === "replace" && reference) {
+      // The host asked to reuse this exact picture: edit it, erasing the old text and writing the new details.
+      b64 = await editFromReference(replacePrompt(card), reference);
+    } else if (isCard) {
       // Always GENERATE a fresh card from the design brief. The sample's look reaches us as the
       // style text the describe step wrote from it — we never edit/stamp the sample image itself,
       // because that makes the model keep the sample's own names, dates and layout.

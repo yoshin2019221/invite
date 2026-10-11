@@ -136,6 +136,8 @@
     "save": "Save changes"
   },
   "Created": {
+    "previewHeading": "How your invite looks to guests",
+    "previewOpen": "Open full invite",
     "heading": "Your invite is ready",
     "guestLink": "Link to send to guests",
     "editLink": "Your private edit link",

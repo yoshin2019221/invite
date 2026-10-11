@@ -85,6 +85,9 @@ export default function CreateFlow() {
   const [brief, setBrief] = useState("");
   const [artBusy, setArtBusy] = useState(false);
   const [artMsg, setArtMsg] = useState<string | null>(null);
+  // A picture of an invitation the host wants reused as the design (old text erased, their details written).
+  const [designPic, setDesignPic] = useState<{ mediaType: string; data: string; preview: string } | null>(null);
+  const designRef = useRef<HTMLInputElement>(null);
 
   const [aiNote, setAiNote] = useState<string | null>(null);
   const [micMsg, setMicMsg] = useState<string | null>(null);
@@ -118,7 +121,7 @@ export default function CreateFlow() {
   }
 
   // Designs a complete invitation card (names, date, venue drawn into the art) in the sample's style.
-  async function makeCard(card: CardDetails) {
+  async function makeCard(card: CardDetails, reuse?: { mediaType: string; data: string }) {
     setArtBusy(true);
     setArtMsg(null);
     setArtDone(false);
@@ -126,7 +129,7 @@ export default function CreateFlow() {
       const res = await fetch("/api/v1/ai/artwork", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ card }),
+        body: JSON.stringify(reuse ? { card, mode: "replace", reference: { mediaType: reuse.mediaType, data: reuse.data } } : { card }),
       });
       if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
       if (!res.ok) { setArtMsg(ai("art.failed")); return; }
@@ -297,13 +300,30 @@ export default function CreateFlow() {
   };
   const hasMissing = Object.values(missing).some(Boolean);
 
+  async function onDesignPic(file: File | undefined) {
+    if (!file) return;
+    try {
+      const blob = await compressImage(file);
+      const data = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result));
+        r.onerror = rej;
+        r.readAsDataURL(blob);
+      });
+      setDesignPic({ mediaType: "image/jpeg", data: data.split(",")[1] ?? "", preview: data });
+    } catch {
+      setArtMsg(ai("errors.image"));
+    }
+    if (designRef.current) designRef.current.value = "";
+  }
+
   async function onPhoto(file: File | undefined) {
     if (!file) return;
     setPhotoBusy(true);
     setMessage(null);
     try {
       const path = await uploadPhoto(file);
-      update("photoPath", path);
+      setDraft((cur) => ({ ...cur, photoPath: path, rich: { ...cur.rich, heroFullCard: false } }));
     } catch {
       setMessage(t("errors.photo"));
     } finally {
@@ -914,18 +934,23 @@ export default function CreateFlow() {
           className="hidden"
           onChange={(e) => void onPhoto(e.target.files?.[0])}
         />
-        <button
-          type="button"
-          disabled={photoBusy}
-          onClick={() => fileRef.current?.click()}
-          className="rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95 disabled:opacity-60"
-        >
-          {photoBusy
-            ? t("fields.photoWorking")
-            : draft.photoPath
-              ? t("fields.photoChange")
-              : t("fields.photo")}
-        </button>
+        <div className="flex w-full flex-col gap-2 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
+          <p className="text-lg font-medium">{ai("art.bgHeading")}</p>
+          <p className="text-sm text-ink-soft">{ai("art.bgHint")}</p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={photoBusy}
+              onClick={() => fileRef.current?.click()}
+              className="rounded-lg border-2 border-maroon px-6 py-4 text-lg font-semibold text-maroon active:scale-95 disabled:opacity-60"
+            >
+              {photoBusy ? t("fields.photoWorking") : draft.photoPath && !draft.rich.heroFullCard ? ai("art.bgChange") : ai("art.bgAdd")}
+            </button>
+            {draft.photoPath && !draft.rich.heroFullCard && (
+              <button type="button" onClick={() => update("photoPath", null)} className="px-4 py-4 text-lg text-maroon underline">{ai("art.bgRemove")}</button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
@@ -933,6 +958,7 @@ export default function CreateFlow() {
         <label htmlFor="brief" className="text-base text-ink-soft">{ai("art.briefLabel")}</label>
         <textarea id="brief" rows={5} maxLength={1800} className={inputClass} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder={ai("art.briefPlaceholder")} />
         <p className="text-sm text-ink-soft">{ai("art.briefHint")}</p>
+        <input ref={designRef} type="file" accept="image/*" className="hidden" onChange={(e) => void onDesignPic(e.target.files?.[0])} />
         {artBusy && <p role="status" className="text-lg font-medium text-maroon">🎨 {ai("art.painting")}</p>}
         {artDone && !artBusy && <p role="status" className="text-base text-ink-soft">{sample ? ai("art.readySample") : ai("art.ready")}</p>}
         <button type="button" disabled={artBusy} onClick={() => void makeCard(cardFromDraft())} className="self-start rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">
@@ -954,6 +980,25 @@ export default function CreateFlow() {
             </div>
           </>
         )}
+        <div className="mt-2 flex flex-col gap-2 rounded-xl border-2 border-dashed border-maroon/30 p-3">
+          <p className="text-lg font-medium">{ai("art.designHeading")}</p>
+          <p className="text-sm text-ink-soft">{ai("art.designHint")}</p>
+          {(designPic ?? sample) && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={(designPic ?? sample)!.preview} alt="" className="h-40 w-auto self-start rounded-lg object-cover shadow" />
+          )}
+          <div className="flex flex-wrap gap-3">
+            <button type="button" disabled={artBusy} onClick={() => designRef.current?.click()} className="rounded-lg border-2 border-maroon px-5 py-3 text-lg font-semibold text-maroon active:scale-95 disabled:opacity-50">
+              {designPic ?? sample ? ai("art.designChange") : ai("art.designAdd")}
+            </button>
+            {(designPic ?? sample) && (
+              <button type="button" disabled={artBusy} onClick={() => { const r = (designPic ?? sample)!; void makeCard(cardFromDraft(), { mediaType: r.mediaType, data: r.data }); }} className="rounded-lg bg-maroon px-5 py-3 text-lg font-semibold text-paper active:scale-95 disabled:opacity-50">
+                {artBusy ? ai("art.designWorking") : ai("art.designUse")}
+              </button>
+            )}
+            {designPic && <button type="button" onClick={() => setDesignPic(null)} className="px-3 py-3 text-lg text-maroon underline">{ai("art.designRemove")}</button>}
+          </div>
+        </div>
         {artMsg && <p role="alert" className="text-lg font-medium text-red-800">{artMsg}</p>}
       </div>
 
