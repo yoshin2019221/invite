@@ -7,7 +7,7 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 export const maxDuration = 60;
 
 const bodySchema = z.object({
-  text: z.string().trim().max(1500),
+  text: z.string().trim().max(5000),
   image: z.object({ mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().max(2_000_000) }).optional(),
 }).refine((v) => v.text.length > 0 || v.image, { message: "empty" });
 

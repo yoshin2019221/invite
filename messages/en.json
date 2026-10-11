@@ -390,7 +390,10 @@
       "readySample": "Your invitation card is ready, in the style of your sample. You can design a new one or add your own photo.",
       "plainOpen": "Or make a plain background instead",
       "previewAlt": "Your invitation card",
-      "previewCaption": "This is your invitation. Guests will see exactly this."
+      "previewCaption": "This is your invitation. Guests will see exactly this.",
+      "briefLabel": "How it should look (design brief)",
+      "briefPlaceholder": "Describe the full look — colours, borders, motifs, illustrations, layout and art style. The more detail, the closer the result.",
+      "briefHint": "We filled this from your description. Edit it freely, then design your card."
     },
     "micDenied": "The microphone is blocked. Tap the lock icon next to the web address, allow the microphone, then try again.",
     "micNone": "We did not hear anything. Tap the button and speak clearly.",

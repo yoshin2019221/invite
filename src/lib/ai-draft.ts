@@ -12,10 +12,35 @@ const MODEL = process.env.AI_MODEL || "claude-haiku-5-5";
 // out-of-list value) must never reject the whole draft. Every field coerces to a valid value or null,
 // so parsing always succeeds and missing bits simply become questions for the host.
 const str = (max: number) => (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+// Small edit-distance so a near-spelling still matches (e.g. "weding" -> "wedding").
+function close(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 2) return false;
+  const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return dp[a.length][b.length] <= 2;
+}
+// Common words a host might use for each occasion.
+const OCCASION_SYNONYMS: Record<string, string> = {
+  marriage: "wedding", shaadi: "wedding", shadi: "wedding", vivah: "wedding", nikah: "wedding", reception: "wedding", engagement: "wedding", roka: "wedding", sangeet: "wedding",
+  bday: "birthday", bithday: "birthday", janamdin: "birthday",
+  grihapravesh: "housewarming", grihpravesh: "housewarming", "griha pravesh": "housewarming", housewarm: "housewarming", newhome: "housewarming",
+  puja: "pooja", hawan: "pooja", havan: "pooja", satyanarayan: "pooja", katha: "pooja", mundan: "pooja",
+  naming: "baby", namkaran: "baby", annaprashan: "baby", babyshower: "baby", godhbharai: "baby", cradle: "baby",
+  gettogether: "party", "get together": "party", anniversary: "party", celebration: "party", function: "party",
+};
 const inList = <T extends readonly string[]>(vals: T) => (v: unknown): T[number] | null => {
   if (typeof v !== "string") return null;
   const s = v.trim().toLowerCase();
-  return ((vals as readonly string[]).find((x) => x.toLowerCase() === s) as T[number]) ?? null;
+  const list = vals as readonly string[];
+  const exact = list.find((x) => x.toLowerCase() === s);
+  if (exact) return exact as T[number];
+  const syn = OCCASION_SYNONYMS[s] ?? OCCASION_SYNONYMS[s.replace(/[^a-z]/g, "")];
+  if (syn && list.includes(syn)) return syn as T[number];
+  const near = list.find((x) => close(s, x.toLowerCase()));
+  return (near as T[number]) ?? null;
 };
 const dateStr = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.trim()) ? v.trim() : null);
 const timeStr = (v: unknown): string | null => {
@@ -44,6 +69,7 @@ export const extractedSchema = z.object({
   message: nullableStr(600),
   templateId: z.any().transform(inList(TEMPLATES)),
   artPrompt: nullableStr(280),
+  designPrompt: nullableStr(1800),
   styleStated: z.any().transform((v) => v === true || v === "true"),
   itinerary: z.any().transform((v) =>
     (Array.isArray(v) ? v : []).slice(0, 8)
@@ -88,7 +114,8 @@ const TOOL = {
       message: { type: ["string", "null"], description: "A warm 1-2 sentence note to guests, written for this event, in the host's language." },
       templateId: { type: ["string", "null"], enum: [...TEMPLATES, null], description: "Closest design to the look the host wants (colours, mood, or the sample image). Null if no style hint." },
       artPrompt: { type: ["string", "null"], description: "In English, 1-2 sentences describing background artwork for this invite: motifs, colours, mood, setting (e.g. \"Marigold garlands and brass diyas, warm saffron and maroon tones, soft evening glow\"). Base it on the occasion and any look the host described. No people, no text." },
-      styleStated: { type: "boolean", description: "true only if the host described a look, colours, mood, or gave a sample image." },
+      designPrompt: { type: ["string", "null"], description: "In English, a COMPLETE, standalone image-generation brief for the finished invitation card, built ONLY from what the host described: canvas/orientation, palette, background, borders, motifs and illustrations, the composition/layout of elements, typography feel, and art style/mood. Be as detailed as the host was — if they wrote a long descriptive brief, capture all of it faithfully and in order. It must produce an ORIGINAL design: never instruct to copy, reproduce or 'match' a specific existing image, photograph, brand, logo, mascot or named artwork, and never include real named people's photographs. If the host gave little visual direction, write a sensible, elegant original design for the occasion. Do not put the actual names/date/venue text inside this field." },
+      styleStated: { type: "boolean", description: "true only if the host described a look, colours, mood, layout, or gave a sample image." },
       itinerary: { type: "array", items: { type: "object", properties: { name: { type: "string" }, date: { type: ["string", "null"] }, time: { type: ["string", "null"] }, venue: { type: ["string", "null"] }, note: { type: ["string", "null"] } }, required: ["name"] } },
       story: { type: "array", items: { type: "object", properties: { title: { type: "string" }, when: { type: ["string", "null"] }, text: { type: ["string", "null"] } }, required: ["title"] } },
     },
@@ -98,12 +125,14 @@ const TOOL = {
 
 const GUIDE = `You help an Indian family host build a digital invite. Read their description (it may be English, Hindi or Hinglish) and call fill_invite.
 Rules:
+- The description will often have spelling mistakes, typos, phonetic spellings, missing punctuation or mixed Hindi/English. Understand the intent charitably and ALWAYS fill the invite. Auto-correct obvious misspellings of common words and places (e.g. "weding"->wedding, "anniversary"->anniversary, "Gurgoan"->Gurgaon). Keep people's proper names close to how the host wrote them, only fixing clear slips. Never refuse and never leave everything blank because the text is messy.
 - Never invent facts. If the title, host, date, time or venue is not stated, use null. Do not guess a date from nothing.
 - Resolve relative dates ("next Saturday", "15 Nov") using today's date given below.
 - "evening" alone is not a time; leave time null unless a clock time is given or clearly implied (e.g. "7 baje").
 - Designs: royal = dark wedding with gold; jharokha = plum and gold arched-window wedding with monogram; rangeela = bold pink, teal and mustard patterned, playful wedding or party; ivory = ivory with green and rose floral borders, elegant wedding, baby or housewarming; bloom = soft pink wedding or baby; griha = housewarming with marigold; pooja = devotional, saffron on dark red; confetti = bright birthday or kids party; blossom = soft blue baby; night = dark neon party. Pick the closest to the colours or mood described, or to the sample image. Set styleStated=true only if they gave a look or image.
 - itinerary only when they list several functions; story only when they give story moments.
 - artPrompt: always write it, in English, even if the host wrote Hindi. If a sample image is attached, make artPrompt a rich description of the sample\'s visual style (palette, motifs, borders, texture, mood) and NEVER include any names, dates or text from it.
+- designPrompt: always write a complete original design brief in English. If the host gave a detailed visual description (palette, borders, motifs, illustrations, layout, art style), capture ALL of it faithfully and in the order they gave it. Keep it original: never say to copy, reproduce or match a specific existing image, brand, logo, character or named artwork, and no real people\'s photos. Do not include the names/date/venue text here.
 - message: one or two warm lines for guests. Write it in the SAME language as the host\'s description: English description means English message, Hindi means Hindi, Hinglish means Hinglish. Never switch language.`;
 
 type Image = { mediaType: "image/jpeg" | "image/png" | "image/webp"; data: string };

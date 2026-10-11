@@ -82,6 +82,7 @@ export default function CreateFlow() {
   const sampleRef = useRef<HTMLInputElement>(null);
   const [artOpen, setArtOpen] = useState(false);
   const [artText, setArtText] = useState("");
+  const [brief, setBrief] = useState("");
   const [artBusy, setArtBusy] = useState(false);
   const [artMsg, setArtMsg] = useState<string | null>(null);
 
@@ -100,7 +101,7 @@ export default function CreateFlow() {
     const d = new Date(`${date}T${time}:00+05:30`);
     return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }).format(d);
   }
-  type CardDetails = { title?: string; hostNames?: string; occasion?: string; dateText?: string; timeText?: string; venue?: string; message?: string; style?: string; language: "en" | "hi" };
+  type CardDetails = { title?: string; hostNames?: string; occasion?: string; dateText?: string; timeText?: string; venue?: string; message?: string; style?: string; designPrompt?: string; language: "en" | "hi" };
   function cardFromDraft(): CardDetails {
     return {
       title: draft.title || undefined,
@@ -111,6 +112,7 @@ export default function CreateFlow() {
       venue: [draft.venueName, draft.address].filter(Boolean).join(", ") || undefined,
       message: draft.message || undefined,
       style: artText || undefined,
+      designPrompt: brief.trim() || undefined,
       language: locale,
     };
   }
@@ -388,15 +390,17 @@ export default function CreateFlow() {
       });
       if (res.status === 429) { setAiMsg(ai("errors.busy")); return; }
       if (!res.ok) {
+        // Never trap the host: if the AI can't read it, move them on to choose the occasion and keep going.
         const info = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
-        setAiMsg(ai("errors.unavailable"));
         setAiNote(`${res.status} ${info.error ?? ""}${info.code ? ` ${info.code}` : ""}`.trim());
+        setAiMsg(null);
+        setStep("occasion");
         return;
       }
       const { draft: d, questions: qs } = (await res.json()) as {
         draft: {
           occasion: Occasion | null; title: string | null; hostNames: string | null; date: string | null; time: string | null;
-          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null; artPrompt: string | null;
+          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null; artPrompt: string | null; designPrompt: string | null;
           itinerary: { name: string; date: string | null; time: string | null; venue: string | null; note: string | null }[];
           story: { title: string; when: string | null; text: string | null }[];
         };
@@ -431,6 +435,7 @@ export default function CreateFlow() {
       setStep(qs.length ? "ask" : "details");
       // Start designing the full invitation card in the background while the host answers the last questions.
       if (d.artPrompt) setArtText(d.artPrompt);
+      if (d.designPrompt) setBrief(d.designPrompt);
       if (autoArt && (d.title || d.occasion) && !draft.photoPath) {
         void makeCard({
           title: d.title ?? undefined,
@@ -441,11 +446,14 @@ export default function CreateFlow() {
           venue: [d.venueName, d.address].filter(Boolean).join(", ") || undefined,
           message: d.message ?? undefined,
           style: d.artPrompt ?? undefined,
+          designPrompt: d.designPrompt ?? undefined,
           language: locale,
         });
       }
     } catch {
-      setAiMsg(ai("errors.unavailable"));
+      // Network or other hiccup: let the host carry on by choosing the occasion.
+      setAiMsg(null);
+      setStep("occasion");
     } finally {
       setThinking(false);
     }
@@ -556,7 +564,7 @@ export default function CreateFlow() {
         <textarea
           rows={6}
           value={desc}
-          maxLength={1500}
+          maxLength={4000}
           onChange={(e) => setDesc(e.target.value)}
           placeholder={ai("placeholder")}
           aria-label={ai("heading")}
@@ -900,6 +908,9 @@ export default function CreateFlow() {
 
       <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
         <p className="text-lg font-medium">{ai("art.heading")}</p>
+        <label htmlFor="brief" className="text-base text-ink-soft">{ai("art.briefLabel")}</label>
+        <textarea id="brief" rows={5} maxLength={1800} className={inputClass} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder={ai("art.briefPlaceholder")} />
+        <p className="text-sm text-ink-soft">{ai("art.briefHint")}</p>
         {artBusy && <p role="status" className="text-lg font-medium text-maroon">🎨 {ai("art.painting")}</p>}
         {artDone && !artBusy && <p role="status" className="text-base text-ink-soft">{sample ? ai("art.readySample") : ai("art.ready")}</p>}
         <button type="button" disabled={artBusy} onClick={() => void makeCard(cardFromDraft())} className="self-start rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">

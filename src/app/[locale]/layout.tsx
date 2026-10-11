@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { bodyDevanagari, bodyLatin, display, hindiDisplay } from "@/lib/fonts";
+import { bodyDevanagari, bodyLatin, display, hindiDisplay, ui } from "@/lib/fonts";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
@@ -33,7 +33,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${display.variable} ${hindiDisplay.variable} ${bodyLatin.variable} ${bodyDevanagari.variable}`}
+      className={`${display.variable} ${hindiDisplay.variable} ${bodyLatin.variable} ${bodyDevanagari.variable} ${ui.variable}`}
     >
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>

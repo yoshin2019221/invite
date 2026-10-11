@@ -60,7 +60,7 @@ export default function Hero() {
             id="h-ai"
             className="h-ai-box"
             rows={3}
-            maxLength={600}
+            maxLength={4000}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={ai("placeholder")}

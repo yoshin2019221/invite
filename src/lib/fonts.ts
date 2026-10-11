@@ -16,6 +16,14 @@ export const hindiDisplay = localFont({
   adjustFontFallback: false,
 });
 
+// Friendly, highly legible humanist sans for the marketing UI (Latin). Devanagari falls back to Hind.
+export const ui = localFont({
+  src: "../../node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-latin-wght-normal.woff2",
+  variable: "--nf-ui",
+  weight: "100 900",
+  display: "swap",
+});
+
 export const bodyLatin = localFont({
   src: [
     { path: "../../node_modules/@fontsource/hind/files/hind-latin-400-normal.woff2", weight: "400" },

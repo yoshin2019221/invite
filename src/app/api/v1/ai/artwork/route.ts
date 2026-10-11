@@ -24,6 +24,7 @@ const cardSchema = z.object({
   venue: z.string().trim().max(160).optional(),
   message: z.string().trim().max(240).optional(),
   style: z.string().trim().max(400).optional(),
+  designPrompt: z.string().trim().max(1800).optional(),
   language: z.enum(["en", "hi"]).optional(),
 });
 
@@ -51,18 +52,23 @@ function cardPrompt(c: z.infer<typeof cardSchema>, hasSample: boolean): string {
   if (c.venue) lines.push(`Venue: ${c.venue}`);
   if (c.message) lines.push(`Short line: ${c.message}`);
   const occ = c.occasion ? `${c.occasion} ` : "";
+  // The host's full design brief (if given) is the primary scene description; otherwise a short style note.
+  const look = c.designPrompt
+    ? `Design brief (follow it closely): ${c.designPrompt}`
+    : hasSample
+      ? "Match the visual style, colour palette, decorative motifs, borders and overall mood of the attached reference image, as if the same designer made this card."
+      : (c.style ? `Visual style: ${c.style}.` : "Elegant, warm, festive Indian style with tasteful ornamentation.");
   return (
-    `Design ONE complete, finished, print-ready ${occ}invitation card for an Indian family celebration — ` +
+    `Design ONE complete, finished, print-ready ${occ}invitation card — ` +
     `a single elegant portrait card that looks hand-designed by a professional invitation studio, ` +
-    `with the decoration and the words composed together as one artwork (NOT a photo with text pasted on top). ` +
-    (hasSample
-      ? "Match the visual style, colour palette, decorative motifs, borders and overall mood of the attached reference image, as if the same designer made this card. Do NOT copy any names, dates or wording from the reference — use ONLY the details below. "
-      : (c.style ? `Visual style: ${c.style}. ` : "Elegant, warm, festive Indian style with tasteful ornamentation. ")) +
+    `with the decoration and the words composed together as one artwork (NOT a photo with text pasted on top).\n` +
+    look +
+    `\nThis must be an ORIGINAL design: do not copy, reproduce or recreate any specific existing image, photograph, brand, logo, mascot or named artwork${hasSample ? ", and do not copy any names, dates or wording from the attached reference" : ""}. ` +
+    `Illustrated or painted figures and motifs are welcome, but no photographs of real identifiable people.\n` +
     `Render ALL of the following text neatly and clearly, woven into the design, spelled EXACTLY as written, in ${lang}:\n` +
     lines.join("\n") +
     `\nEvery word must be clearly legible with beautiful typography and good contrast against its background. ` +
-    `Use ornamental borders, motifs and flourishes that frame the text. ` +
-    `No people or faces, no photographs of real people, no watermarks, no extra or placeholder text — only the details listed above.`
+    `No watermarks, no extra or placeholder text — only the details listed above.`
   );
 }
 
