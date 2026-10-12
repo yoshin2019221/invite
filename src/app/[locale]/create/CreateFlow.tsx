@@ -121,7 +121,8 @@ export default function CreateFlow() {
   }
 
   // Designs a complete invitation card (names, date, venue drawn into the art) in the sample's style.
-  async function makeCard(card: CardDetails, reuse?: { mediaType: string; data: string }) {
+  // Returns the uploaded image path on success, or null on failure.
+  async function makeCard(card: CardDetails, reuse?: { mediaType: string; data: string }): Promise<string | null> {
     setArtBusy(true);
     setArtMsg(null);
     setArtDone(false);
@@ -131,14 +132,16 @@ export default function CreateFlow() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(reuse ? { card, mode: "replace", reference: { mediaType: reuse.mediaType, data: reuse.data } } : { card }),
       });
-      if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
-      if (!res.ok) { setArtMsg(ai("art.failed")); return; }
+      if (res.status === 429) { setArtMsg(ai("art.busy")); return null; }
+      if (!res.ok) { setArtMsg(ai("art.failed")); return null; }
       const { path } = (await res.json()) as { path: string };
       setDraft((cur) => ({ ...cur, photoPath: path, rich: { ...cur.rich, heroFullCard: true } }));
       setArtDone(true);
       setArtOpen(false);
+      return path;
     } catch {
       setArtMsg(ai("art.failed"));
+      return null;
     } finally {
       setArtBusy(false);
     }
@@ -350,6 +353,11 @@ export default function CreateFlow() {
     }
     setBusy(true);
     setMessage(null);
+    // Generate AI card now (with all final details) if the user hasn't made one yet and autoArt is on.
+    let cardPath = draft.photoPath;
+    if (autoArt && !cardPath && (draft.title.trim() || draft.occasion)) {
+      cardPath = await makeCard(cardFromDraft());
+    }
     const payload = {
       occasion: draft.occasion,
       title: draft.title.trim(),
@@ -361,10 +369,10 @@ export default function CreateFlow() {
       mapUrl: draft.mapUrl.trim() || undefined,
       message: draft.message.trim() || undefined,
       language: locale,
-      photoPath: draft.photoPath ?? undefined,
+      photoPath: cardPath ?? undefined,
       theme: draft.theme,
       template: draft.template,
-      rich: TEMPLATE_DEFS[draft.template].rich ? draft.rich : undefined,
+      rich: TEMPLATE_DEFS[draft.template].rich ? { ...draft.rich, designPrompt: brief.trim() || undefined } : undefined,
     };
     try {
       if (result) {
@@ -475,23 +483,9 @@ export default function CreateFlow() {
       }));
       setQuestions(qs);
       setStep(qs.length ? "ask" : "details");
-      // Start designing the full invitation card in the background while the host answers the last questions.
+      // Save AI-suggested design prompts for later use (card generation happens on final submit).
       if (d.artPrompt) setArtText(d.artPrompt);
       if (d.designPrompt) setBrief(d.designPrompt);
-      if (autoArt && (d.title || d.occasion) && !draft.photoPath) {
-        void makeCard({
-          title: d.title ?? undefined,
-          hostNames: d.hostNames ?? undefined,
-          occasion: d.occasion ?? undefined,
-          dateText: d.date ? fmtDate(d.date, d.time ?? undefined) : undefined,
-          timeText: d.date && d.time ? fmtTime(d.date, d.time) : undefined,
-          venue: [d.venueName, d.address].filter(Boolean).join(", ") || undefined,
-          message: d.message ?? undefined,
-          style: d.artPrompt ?? undefined,
-          designPrompt: d.designPrompt ?? undefined,
-          language: locale,
-        });
-      }
     } catch {
       // Network or other hiccup: let the host carry on by choosing the occasion.
       setAiMsg(null);
@@ -532,6 +526,7 @@ export default function CreateFlow() {
     const wa = `https://wa.me/?text=${encodeURIComponent(
       `${created("shareText", { title: draft.title })}\n${guestUrl}`,
     )}`;
+    const cardImageUrl = draft.photoPath && draft.rich.heroFullCard ? photoUrl(draft.photoPath) : null;
     return (
       <div className="flex flex-col gap-8">
         <h1 className="font-display text-4xl text-maroon">{created("heading")}</h1>
@@ -539,6 +534,40 @@ export default function CreateFlow() {
         <button type="button" onClick={() => setStep("details")} className="self-start rounded-lg border-2 border-maroon px-6 py-3 text-lg font-semibold text-maroon active:scale-95">
           ← {created("editMore")}
         </button>
+
+        {/* AI-generated card image — download + share */}
+        {cardImageUrl && (
+          <section className="flex flex-col items-center gap-4 rounded-2xl border-2 border-maroon/20 bg-white/50 p-5">
+            <h2 className="self-start font-display text-3xl text-maroon">{created("cardHeading")}</h2>
+            <p className="self-start text-lg text-ink-soft">{created("cardIntro")}</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={cardImageUrl}
+              alt={ai("art.previewAlt")}
+              className="w-full max-w-[340px] rounded-xl shadow-lg"
+            />
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={cardImageUrl}
+                download={`invite-${result.slug}.jpg`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95"
+              >
+                📥 {created("downloadCard")}
+              </a>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`${created("shareText", { title: draft.title })}\n${guestUrl}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95"
+              >
+                💬 {created("whatsappCard")}
+              </a>
+            </div>
+            <p className="text-base text-ink-soft">{created("cardShareTip")}</p>
+          </section>
+        )}
 
         <section className="flex flex-col items-center gap-3">
           <p className="self-start text-lg font-medium">{created("previewHeading")}</p>

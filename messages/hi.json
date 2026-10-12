@@ -153,7 +153,12 @@
     "whatsapp": "WhatsApp पर भेजें",
     "view": "निमंत्रण देखें",
     "shareText": "आप आमंत्रित हैं: {title}",
-    "editMore": "विवरण बदलें"
+    "editMore": "विवरण बदलें",
+    "cardHeading": "आपका निमंत्रण कार्ड",
+    "cardIntro": "कार्ड डाउनलोड करें और WhatsApp, Instagram या कहीं भी शेयर करें।",
+    "downloadCard": "कार्ड डाउनलोड करें",
+    "whatsappCard": "WhatsApp पर शेयर करें",
+    "cardShareTip": "सुझाव: कार्ड डाउनलोड करें, फिर WhatsApp में निमंत्रण लिंक के साथ भेजें।"
   },
   "Guest": {
     "hostedBy": "मेज़बान: {names}",

@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import RsvpForm from "@/app/[locale]/e/[slug]/RsvpForm";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { formatTimeOnly, intlLocale, mapLink, type PublicEvent } from "@/lib/events";
+import { designPromptToCSS } from "@/lib/design-to-css";
 import { monogram, richOf } from "@/lib/rich";
 import { photoPublicUrl } from "@/lib/supabase/admin";
 import { templateFontClass } from "@/lib/template-fonts";
@@ -44,27 +45,42 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   const when = dateParts(event.starts_at, event.timezone, locale);
   const time = formatTimeOnly(event.starts_at, event.timezone, locale);
   const c = def.colors;
-  const style = {
-    "--paper": c.paper, "--paper-deep": c.paperDeep, "--ink": c.ink, "--ink-soft": c.inkSoft,
-    "--maroon": c.accent, "--maroon-deep": c.accentDeep, "--saffron": c.highlight,
-  } as React.CSSProperties;
   const forward = `https://wa.me/?text=${encodeURIComponent(`${g("forwardText", { title: event.title })}\n${inviteUrl}`)}`;
   const map = mapLink(event);
   const showCountdown = rich.countdown;
   const fullCard = rich.heroFullCard && !!photo;
+  // If the host used AI to design a card, derive matching colours for the HTML invite from the design prompt.
+  const designCSS = fullCard ? designPromptToCSS(rich.designPrompt) : null;
+  const style = {
+    "--paper": c.paper, "--paper-deep": c.paperDeep, "--ink": c.ink, "--ink-soft": c.inkSoft,
+    "--maroon": c.accent, "--maroon-deep": c.accentDeep, "--saffron": c.highlight,
+    // Override with AI-derived colours when available
+    ...(designCSS?.vars ?? {}),
+  } as React.CSSProperties;
 
   return (
-    <div style={style} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass}`} data-template={def.id}>
+    <div style={{ ...style, ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
       {fullCard ? (
         <header className="hero hero-cardfull">
           {/* The card's own colours, blurred, become the backdrop so the frame always blends with it. */}
           <div className="hero-cardfull-bg" style={{ backgroundImage: `url("${photo}")` }} aria-hidden />
+          {[
+            { left: "12%", top: "22%", delay: "0s" },
+            { left: "84%", top: "16%", delay: "1.1s" },
+            { left: "76%", top: "70%", delay: "2.2s" },
+            { left: "18%", top: "78%", delay: "0.6s" },
+            { left: "50%", top: "10%", delay: "1.7s" },
+            { left: "90%", top: "46%", delay: "3s" },
+          ].map((s, i) => (
+            <span key={i} className="hero-cardfull-spark" aria-hidden style={{ left: s.left, top: s.top, animationDelay: s.delay }} />
+          ))}
           <div className="hero-top">
             <Link href={otherLocalePath} hrefLang={locale === "en" ? "hi" : "en"} className="lang-chip">{t("switchTo")}</Link>
           </div>
           <div className="hero-cardfull-img">
             {/* The card already shows names, date and venue drawn into the artwork. */}
             <img src={photo!} alt={event.title} />
+            <div className="hero-cardfull-shine" aria-hidden />
           </div>
           <div className="hero-cardfull-cta">
             <a href="#rsvp" className="btn-main">{t("replyNow")}</a>

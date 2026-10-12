@@ -34,6 +34,8 @@ export const richSchema = z.object({
   // When true, the hero photo is a complete AI-designed invitation card (title, date etc. are already
   // drawn into it), so the invite shows it full-bleed instead of layering text over it again.
   heroFullCard: z.boolean().default(false),
+  // The AI design brief used to generate the card. Used to style the HTML web invite to match.
+  designPrompt: z.string().trim().max(4000).optional(),
 });
 export type Rich = z.infer<typeof richSchema>;
 

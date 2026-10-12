@@ -261,3 +261,42 @@ html[lang="hi"] .tpl-jharokha .hero-title { text-transform: none; letter-spacing
 .tpl-ivory .hero-date-day { color: var(--saffron); }
 .tpl-ivory .event-card { border-radius: 18px; background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
 .tpl-ivory .count-cell { background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
+
+/* ---------- AI design-prompt derived styling ---------- */
+/* When the invite has an AI-generated card, the HTML page picks up matching colours from the design prompt.
+   These classes add ornamental touches to make the page feel cohesive with the card. */
+.design-styled .hero { background: var(--paper); }
+.design-styled .hero-cardfull { background: var(--paper); }
+.design-styled .hero-cardfull-bg { filter: blur(50px) saturate(1.2) brightness(0.92); }
+.design-styled .flow { background: var(--paper); }
+.design-styled .sec { border-color: color-mix(in srgb, var(--saffron) 40%, transparent); }
+.design-styled .sec-title { color: var(--maroon); }
+.design-styled .btn-main { background: var(--maroon); color: var(--paper); }
+.design-styled .btn-ghost { border-color: var(--maroon); color: var(--maroon); }
+.design-styled .event-card { border-color: color-mix(in srgb, var(--saffron) 50%, transparent); background: color-mix(in srgb, var(--paper) 80%, var(--paper-deep)); }
+.design-styled .event-day { color: var(--maroon); }
+.design-styled .count-cell { background: color-mix(in srgb, var(--paper) 90%, var(--paper-deep)); border-color: color-mix(in srgb, var(--saffron) 50%, transparent); color: var(--maroon); }
+.design-styled .count-label { color: var(--ink-soft); }
+.design-styled .story-dot { background: var(--saffron); }
+.design-styled .story::before { background: linear-gradient(180deg, var(--saffron), color-mix(in srgb, var(--saffron) 30%, transparent)); }
+.design-styled .message { color: var(--ink); font-style: italic; }
+
+/* Ornate: decorative border accents */
+.design-ornate .sec { border-width: 2px; border-style: solid; border-radius: 18px; padding: 28px 24px; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
+.design-ornate .sec::before { content: "✦"; display: block; text-align: center; font-size: 1.2rem; color: var(--saffron); margin-bottom: 8px; }
+
+/* Floral: softer, rounded feel */
+.design-floral .sec { border-radius: 24px; }
+.design-floral .event-card { border-radius: 20px; }
+.design-floral .hero-cardfull-img img { border-radius: 18px; }
+
+/* Dark mode styling */
+.design-dark .hero-cardfull::after { background: radial-gradient(120% 80% at 50% 42%, transparent 40%, rgba(0,0,0,0.35) 100%); }
+.design-dark .flow { color: var(--ink); }
+.design-dark .sec { border-color: color-mix(in srgb, var(--saffron) 25%, transparent); }
+.design-dark .event-card { background: color-mix(in srgb, var(--paper) 60%, var(--paper-deep)); }
+.design-dark .count-cell { background: color-mix(in srgb, var(--paper) 60%, var(--paper-deep)); }
+
+/* Minimal: clean, less decoration */
+.design-minimal .sec::before { display: none; }
+.design-minimal .sec { border-width: 1px; }

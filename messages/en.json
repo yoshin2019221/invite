@@ -153,7 +153,12 @@
     "whatsapp": "Share on WhatsApp",
     "view": "View invite",
     "shareText": "You are invited: {title}",
-    "editMore": "Edit details"
+    "editMore": "Edit details",
+    "cardHeading": "Your invitation card",
+    "cardIntro": "Download the card and share it on WhatsApp, Instagram, or anywhere.",
+    "downloadCard": "Download card",
+    "whatsappCard": "Share on WhatsApp",
+    "cardShareTip": "Tip: Download the card, then attach it in WhatsApp along with the invite link for the best experience."
   },
   "Guest": {
     "hostedBy": "Hosted by {names}",
