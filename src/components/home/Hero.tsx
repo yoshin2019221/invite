@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { TemplateId } from "@/lib/templates";
@@ -25,8 +25,59 @@ export default function Hero() {
   const [i, setI] = useState(0);
   const [name, setName] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [listening, setListening] = useState(false);
+  const [canSpeak, setCanSpeak] = useState(false);
+  const [micMsg, setMicMsg] = useState<string | null>(null);
+  const recRef = useRef<{ stop: () => void } | null>(null);
   const pick = CHOICES[i];
   const shown = name.trim() || live(`names.${pick.occ}`);
+
+  useEffect(() => { setCanSpeak(typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)); }, []);
+
+  function stopSpeaking() {
+    try { recRef.current?.stop(); } catch { /* ignore */ }
+    setListening(false);
+  }
+
+  function speak() {
+    type Rec = {
+      lang: string; interimResults: boolean; continuous: boolean; maxAlternatives: number;
+      onresult: (e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void;
+      onend: () => void; onerror: (e: { error?: string }) => void; start: () => void; stop: () => void; abort: () => void;
+    };
+    const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) { setMicMsg(ai("micFailed")); return; }
+    if (listening) { stopSpeaking(); return; }
+    const r = new Ctor();
+    recRef.current = r;
+    r.lang = locale === "hi" ? "hi-IN" : "en-IN";
+    r.interimResults = true;
+    r.continuous = true;
+    r.maxAlternatives = 1;
+    r.onresult = (e) => {
+      let finalChunk = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (res.isFinal) finalChunk += res[0].transcript + " ";
+      }
+      if (finalChunk) setPrompt((d) => `${d ? d + " " : ""}${finalChunk.trim()}`.slice(0, 4000));
+    };
+    r.onend = () => setListening(false);
+    r.onerror = (e) => {
+      setListening(false);
+      const err = e.error;
+      setMicMsg(
+        err === "not-allowed" || err === "service-not-allowed" ? ai("micDenied")
+        : err === "no-speech" ? ai("micNone")
+        : err === "aborted" ? null
+        : ai("micFailed"),
+      );
+    };
+    setMicMsg(null);
+    setListening(true);
+    try { r.start(); } catch { setListening(false); setMicMsg(ai("micFailed")); }
+  }
 
   function go() {
     try {
@@ -65,6 +116,15 @@ export default function Hero() {
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={ai("placeholder")}
           />
+          <div className="h-ai-actions">
+            {canSpeak && (
+              <button type="button" onClick={speak} className={`h-mic ${listening ? "h-mic-on" : ""}`}>
+                <span aria-hidden>🎤</span>{listening ? ai("micStop") : ai("mic")}
+              </button>
+            )}
+          </div>
+          {listening && <p className="h-ai-hint">{ai("micHint")}</p>}
+          {micMsg && <p className="h-ai-hint h-ai-err">{micMsg}</p>}
           <p className="h-ai-note">{ai("note")}</p>
           <button type="button" onClick={goAi} className="h-cta h-cta-ai">{ai("cta")}</button>
         </div>

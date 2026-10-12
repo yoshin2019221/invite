@@ -72,7 +72,13 @@
       "heading": "Make it your way with AI",
       "placeholder": "Tell us in your own words — e.g. Riya & Kabir's wedding on 12 December at 7pm at Taj Palace, Delhi. Plum and gold, royal and elegant.",
       "note": "Tip: include the names, date, time and venue so we can fill your invite.",
-      "cta": "Create with AI"
+      "cta": "Create with AI",
+      "mic": "Speak it",
+      "micStop": "Stop",
+      "micHint": "Speak clearly. Tap Stop when done.",
+      "micDenied": "Microphone is blocked. Tap the lock icon near the address bar, allow the mic, then try again.",
+      "micNone": "Didn't catch that. Tap the mic and speak clearly.",
+      "micFailed": "Voice input isn't working in this browser. Please type instead, or use Chrome."
     },
     "useThis": "Use this design"
   },
