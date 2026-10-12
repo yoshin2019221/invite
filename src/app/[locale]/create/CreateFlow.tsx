@@ -180,7 +180,7 @@ export default function CreateFlow() {
     setListening(false);
   }
 
-  function speak() {
+  async function speak() {
     type Rec = {
       lang: string; interimResults: boolean; continuous: boolean; maxAlternatives: number;
       onresult: (e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void;
@@ -190,6 +190,16 @@ export default function CreateFlow() {
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) { setMicMsg(ai("micFailed")); return; }
     if (listening) { stopSpeaking(); return; }
+
+    // Request mic permission explicitly — the Speech API alone doesn't always trigger the browser prompt
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((tr) => tr.stop());
+    } catch {
+      setMicMsg(ai("micDenied"));
+      return;
+    }
+
     const r = new Ctor();
     recRef.current = r;
     r.lang = locale === "hi" ? "hi-IN" : "en-IN";
