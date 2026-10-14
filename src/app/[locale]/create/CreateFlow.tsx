@@ -6,11 +6,10 @@ import Link from "next/link";
 import { OCCASIONS } from "@/lib/validation";
 import { compressImage } from "@/lib/image";
 import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
-import DownloadCard from "@/components/invite/DownloadCard";
 import TemplatePicker from "@/components/invite/TemplatePicker";
+import LivePreview from "@/components/invite/LivePreview";
 import { EMPTY_RICH, type Rich } from "@/lib/rich";
 import { DEFAULT_TEMPLATE, TEMPLATE_DEFS, isTemplate, templatesFor, type TemplateId } from "@/lib/templates";
-import { photoUrl, uploadPhoto } from "@/lib/upload-client";
 import { DEFAULT_THEME, OCCASION_THEME, THEMES, THEME_COLORS, type ThemeId } from "@/lib/themes";
 
 type Occasion = (typeof OCCASIONS)[number];
@@ -25,7 +24,6 @@ type Draft = {
   address: string;
   mapUrl: string;
   message: string;
-  photoPath: string | null;
   theme: ThemeId;
   template: TemplateId;
   rich: Rich;
@@ -41,7 +39,6 @@ const EMPTY: Draft = {
   address: "",
   mapUrl: "",
   message: "",
-  photoPath: null,
   theme: DEFAULT_THEME,
   template: DEFAULT_TEMPLATE,
   rich: EMPTY_RICH,
@@ -69,108 +66,21 @@ export default function CreateFlow() {
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [photoBusy, setPhotoBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [result, setResult] = useState<{ slug: string; editToken: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const [desc, setDesc] = useState("");
   const [sample, setSample] = useState<{ mediaType: string; data: string; preview: string } | null>(null);
   const [thinking, setThinking] = useState(false);
   const [aiMsg, setAiMsg] = useState<string | null>(null);
   const [questions, setQuestions] = useState<string[]>([]);
   const sampleRef = useRef<HTMLInputElement>(null);
-  const [artOpen, setArtOpen] = useState(false);
-  const [artText, setArtText] = useState("");
   const [brief, setBrief] = useState("");
-  const [artBusy, setArtBusy] = useState(false);
-  const [artMsg, setArtMsg] = useState<string | null>(null);
-  // A picture of an invitation the host wants reused as the design (old text erased, their details written).
-  const [designPic, setDesignPic] = useState<{ mediaType: string; data: string; preview: string } | null>(null);
-  const designRef = useRef<HTMLInputElement>(null);
-
+  const [designBusy, setDesignBusy] = useState(false);
+  const [designFailed, setDesignFailed] = useState(false);
   const [aiNote, setAiNote] = useState<string | null>(null);
   const [micMsg, setMicMsg] = useState<string | null>(null);
-  const [autoArt, setAutoArt] = useState(true);
-  const [artDone, setArtDone] = useState(false);
 
-  // Paints artwork from a short English description. If the host already added their own photo, that one stays.
-  // Readable date/time for the card text, in the chosen language.
-  function fmtDate(date: string, time?: string) {
-    const d = new Date(`${date}T${time ?? "12:00"}:00+05:30`);
-    return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }).format(d);
-  }
-  function fmtTime(date: string, time: string) {
-    const d = new Date(`${date}T${time}:00+05:30`);
-    return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }).format(d);
-  }
-  type CardDetails = { title?: string; hostNames?: string; occasion?: string; dateText?: string; timeText?: string; venue?: string; message?: string; style?: string; designPrompt?: string; language: "en" | "hi" };
-  function cardFromDraft(): CardDetails {
-    return {
-      title: draft.title || undefined,
-      hostNames: draft.hostNames || undefined,
-      occasion: draft.occasion ?? undefined,
-      dateText: draft.date ? fmtDate(draft.date, draft.time || undefined) : undefined,
-      timeText: draft.date && draft.time ? fmtTime(draft.date, draft.time) : undefined,
-      venue: [draft.venueName, draft.address].filter(Boolean).join(", ") || undefined,
-      message: draft.message || undefined,
-      style: artText || undefined,
-      designPrompt: brief.trim() || undefined,
-      language: locale,
-    };
-  }
-
-  // Designs a complete invitation card (names, date, venue drawn into the art) in the sample's style.
-  // Returns the uploaded image path on success, or null on failure.
-  async function makeCard(card: CardDetails, reuse?: { mediaType: string; data: string }): Promise<string | null> {
-    setArtBusy(true);
-    setArtMsg(null);
-    setArtDone(false);
-    try {
-      const res = await fetch("/api/v1/ai/artwork", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(reuse ? { card, mode: "replace", reference: { mediaType: reuse.mediaType, data: reuse.data } } : { card }),
-      });
-      if (res.status === 429) { setArtMsg(ai("art.busy")); return null; }
-      if (!res.ok) { setArtMsg(ai("art.failed")); return null; }
-      const { path } = (await res.json()) as { path: string };
-      setDraft((cur) => ({ ...cur, photoPath: path, rich: { ...cur.rich, heroFullCard: true } }));
-      setArtDone(true);
-      setArtOpen(false);
-      return path;
-    } catch {
-      setArtMsg(ai("art.failed"));
-      return null;
-    } finally {
-      setArtBusy(false);
-    }
-  }
-
-  // Plain decorative background (no text) from a short phrase; the invite lays its own text over it.
-  async function makeArt(prompt: string, occasion?: string) {
-    if (prompt.trim().length < 3) return;
-    setArtBusy(true);
-    setArtMsg(null);
-    setArtDone(false);
-    try {
-      const res = await fetch("/api/v1/ai/artwork", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim(), occasion: occasion ?? draft.occasion ?? undefined, reference: sample ? { mediaType: sample.mediaType, data: sample.data } : undefined }),
-      });
-      if (res.status === 429) { setArtMsg(ai("art.busy")); return; }
-      if (!res.ok) { setArtMsg(ai("art.failed")); return; }
-      const { path } = (await res.json()) as { path: string };
-      setDraft((cur) => ({ ...cur, photoPath: path, rich: { ...cur.rich, heroFullCard: false } }));
-      setArtDone(true);
-      setArtOpen(false);
-    } catch {
-      setArtMsg(ai("art.failed"));
-    } finally {
-      setArtBusy(false);
-    }
-  }
   const [listening, setListening] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
   const recRef = useRef<{ stop: () => void } | null>(null);
@@ -313,38 +223,6 @@ export default function CreateFlow() {
   };
   const hasMissing = Object.values(missing).some(Boolean);
 
-  async function onDesignPic(file: File | undefined) {
-    if (!file) return;
-    try {
-      const blob = await compressImage(file);
-      const data = await new Promise<string>((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(String(r.result));
-        r.onerror = rej;
-        r.readAsDataURL(blob);
-      });
-      setDesignPic({ mediaType: "image/jpeg", data: data.split(",")[1] ?? "", preview: data });
-    } catch {
-      setArtMsg(ai("errors.image"));
-    }
-    if (designRef.current) designRef.current.value = "";
-  }
-
-  async function onPhoto(file: File | undefined) {
-    if (!file) return;
-    setPhotoBusy(true);
-    setMessage(null);
-    try {
-      const path = await uploadPhoto(file);
-      setDraft((cur) => ({ ...cur, photoPath: path, rich: { ...cur.rich, heroFullCard: false } }));
-    } catch {
-      setMessage(t("errors.photo"));
-    } finally {
-      setPhotoBusy(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
   async function submit() {
     setShowErrors(true);
     if (hasMissing || !draft.occasion) {
@@ -353,30 +231,26 @@ export default function CreateFlow() {
     }
     setBusy(true);
     setMessage(null);
-    // Generate AI card and matching web-invite CSS in parallel (with all final details).
-    let cardPath = draft.photoPath;
+    // Custom design: only when the host described a look. The AI writes CSS (colours, textures, animation) for the template.
     let inviteCSS: string | undefined;
-    const designPrompt = brief.trim() || undefined;
-
-    if (autoArt && (draft.title.trim() || draft.occasion)) {
-      const promises: [Promise<string | null>, Promise<string | undefined>] = [
-        // Generate card image if not already done
-        !cardPath ? makeCard(cardFromDraft()) : Promise.resolve(cardPath),
-        // Generate matching CSS for the web invite page
-        designPrompt
-          ? fetch("/api/v1/ai/invite-css", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ designPrompt, occasion: draft.occasion, title: draft.title.trim() }),
-            })
-              .then((r) => (r.ok ? r.json() : null))
-              .then((d: { css?: string } | null) => d?.css)
-              .catch(() => undefined)
-          : Promise.resolve(undefined),
-      ];
-      const [cp, css] = await Promise.all(promises);
-      if (cp) cardPath = cp;
-      inviteCSS = css;
+    const designPrompt = TEMPLATE_DEFS[draft.template].rich ? brief.trim() || undefined : undefined;
+    setDesignFailed(false);
+    if (designPrompt && designPrompt.length >= 10) {
+      setDesignBusy(true);
+      try {
+        const r = await fetch("/api/v1/ai/invite-css", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ designPrompt, occasion: draft.occasion, title: draft.title.trim() }),
+        });
+        const d = r.ok ? ((await r.json()) as { css?: string }) : null;
+        inviteCSS = d?.css;
+        if (!inviteCSS) setDesignFailed(true);
+      } catch {
+        setDesignFailed(true);
+      } finally {
+        setDesignBusy(false);
+      }
     }
 
     const payload = {
@@ -390,10 +264,9 @@ export default function CreateFlow() {
       mapUrl: draft.mapUrl.trim() || undefined,
       message: draft.message.trim() || undefined,
       language: locale,
-      photoPath: cardPath ?? undefined,
       theme: draft.theme,
       template: draft.template,
-      rich: TEMPLATE_DEFS[draft.template].rich ? { ...draft.rich, designPrompt, inviteCSS } : undefined,
+      rich: TEMPLATE_DEFS[draft.template].rich ? { ...draft.rich, heroFullCard: false, designPrompt, inviteCSS } : undefined,
     };
     try {
       if (result) {
@@ -460,6 +333,7 @@ export default function CreateFlow() {
         body: JSON.stringify({ text: desc.trim(), image: sample ? { mediaType: sample.mediaType, data: sample.data } : undefined }),
       });
       if (res.status === 429) { setAiMsg(ai("errors.busy")); return; }
+      if (res.status === 422) { setAiMsg(ai("errors.notInvite")); return; }
       if (!res.ok) {
         // Never trap the host: if the AI can't read it, move them on to choose the occasion and keep going.
         const info = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
@@ -471,7 +345,7 @@ export default function CreateFlow() {
       const { draft: d, questions: qs } = (await res.json()) as {
         draft: {
           occasion: Occasion | null; title: string | null; hostNames: string | null; date: string | null; time: string | null;
-          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null; artPrompt: string | null; designPrompt: string | null;
+          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null; designPrompt: string | null; styleStated: boolean;
           itinerary: { name: string; date: string | null; time: string | null; venue: string | null; note: string | null }[];
           story: { title: string; when: string | null; text: string | null }[];
         };
@@ -504,9 +378,8 @@ export default function CreateFlow() {
       }));
       setQuestions(qs);
       setStep(qs.length ? "ask" : "details");
-      // Save AI-suggested design prompts for later use (card generation happens on final submit).
-      if (d.artPrompt) setArtText(d.artPrompt);
-      if (d.designPrompt) setBrief(d.designPrompt);
+      // Only treat it as a custom design when the host actually described a look.
+      setBrief(d.styleStated && d.designPrompt ? d.designPrompt : "");
     } catch {
       // Network or other hiccup: let the host carry on by choosing the occasion.
       setAiMsg(null);
@@ -547,7 +420,6 @@ export default function CreateFlow() {
     const wa = `https://wa.me/?text=${encodeURIComponent(
       `${created("shareText", { title: draft.title })}\n${guestUrl}`,
     )}`;
-    const cardImageUrl = draft.photoPath && draft.rich.heroFullCard ? photoUrl(draft.photoPath) : null;
     return (
       <div className="flex flex-col gap-8">
         <h1 className="font-display text-4xl text-maroon">{created("heading")}</h1>
@@ -555,40 +427,7 @@ export default function CreateFlow() {
         <button type="button" onClick={() => setStep("details")} className="self-start rounded-lg border-2 border-maroon px-6 py-3 text-lg font-semibold text-maroon active:scale-95">
           ← {created("editMore")}
         </button>
-
-        {/* AI-generated card image — download + share */}
-        {cardImageUrl && (
-          <section className="flex flex-col items-center gap-4 rounded-2xl border-2 border-maroon/20 bg-white/50 p-5">
-            <h2 className="self-start font-display text-3xl text-maroon">{created("cardHeading")}</h2>
-            <p className="self-start text-lg text-ink-soft">{created("cardIntro")}</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={cardImageUrl}
-              alt={ai("art.previewAlt")}
-              className="w-full max-w-[340px] rounded-xl shadow-lg"
-            />
-            <div className="flex flex-wrap gap-3">
-              <a
-                href={cardImageUrl}
-                download={`invite-${result.slug}.jpg`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95"
-              >
-                📥 {created("downloadCard")}
-              </a>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`${created("shareText", { title: draft.title })}\n${guestUrl}`)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border-2 border-maroon px-6 py-4 text-xl font-semibold text-maroon active:scale-95"
-              >
-                💬 {created("whatsappCard")}
-              </a>
-            </div>
-            <p className="text-base text-ink-soft">{created("cardShareTip")}</p>
-          </section>
-        )}
+        {designFailed && <p role="status" className="text-base text-ink-soft">{created("designFailed")}</p>}
 
         <section className="flex flex-col items-center gap-3">
           <p className="self-start text-lg font-medium">{created("previewHeading")}</p>
@@ -632,8 +471,6 @@ export default function CreateFlow() {
             </Link>
           </div>
         </section>
-
-        <DownloadCard slug={result.slug} locale={locale} />
 
         <section className="flex flex-col gap-3 rounded-lg border-2 border-saffron/60 bg-saffron/10 p-5">
           <p className="text-lg font-medium">{created("editLink")}</p>
@@ -693,10 +530,6 @@ export default function CreateFlow() {
           )}
           <p className="text-sm text-ink-soft">{ai("picNote")}</p>
         </div>
-        <label className="flex items-center gap-3 text-lg font-medium">
-          <input type="checkbox" checked={autoArt} onChange={(e) => setAutoArt(e.target.checked)} className="h-6 w-6 accent-maroon" />
-          <span>✨ {ai("art.auto")}</span>
-        </label>
         {aiMsg && <p role="alert" className="text-lg font-medium text-red-800">{aiMsg}</p>}
         {aiNote && <p className="text-sm text-ink-soft">Technical note: {aiNote}</p>}
         <button type="button" disabled={thinking || (!desc.trim() && !sample)} onClick={() => void describe()} className="rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper transition-transform active:scale-95 disabled:opacity-50">
@@ -968,99 +801,30 @@ export default function CreateFlow() {
       </fieldset>
       )}
 
-      <div className="flex flex-col items-start gap-3">
-        {draft.photoPath && draft.rich.heroFullCard ? (
-          <figure className="w-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={photoUrl(draft.photoPath)}
-              alt={ai("art.previewAlt")}
-              className="mx-auto w-full max-w-[340px] rounded-xl shadow-lg"
-            />
-            <figcaption className="mt-2 text-center text-base text-ink-soft">{ai("art.previewCaption")}</figcaption>
-          </figure>
-        ) : draft.photoPath ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photoUrl(draft.photoPath)}
-            alt=""
-            className="h-40 w-40 rounded-lg object-cover"
-          />
-        ) : null}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => void onPhoto(e.target.files?.[0])}
-        />
-        <div className="flex w-full flex-col gap-2 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
-          <p className="text-lg font-medium">{ai("art.bgHeading")}</p>
-          <p className="text-sm text-ink-soft">{ai("art.bgHint")}</p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={photoBusy}
-              onClick={() => fileRef.current?.click()}
-              className="rounded-lg border-2 border-maroon px-6 py-4 text-lg font-semibold text-maroon active:scale-95 disabled:opacity-60"
-            >
-              {photoBusy ? t("fields.photoWorking") : draft.photoPath && !draft.rich.heroFullCard ? ai("art.bgChange") : ai("art.bgAdd")}
-            </button>
-            {draft.photoPath && !draft.rich.heroFullCard && (
-              <button type="button" onClick={() => update("photoPath", null)} className="px-4 py-4 text-lg text-maroon underline">{ai("art.bgRemove")}</button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
-        <p className="text-lg font-medium">{ai("art.heading")}</p>
-        <label htmlFor="brief" className="text-base text-ink-soft">{ai("art.briefLabel")}</label>
-        <textarea id="brief" rows={5} maxLength={1800} className={inputClass} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder={ai("art.briefPlaceholder")} />
-        <p className="text-sm text-ink-soft">{ai("art.briefHint")}</p>
-        <input ref={designRef} type="file" accept="image/*" className="hidden" onChange={(e) => void onDesignPic(e.target.files?.[0])} />
-        {artBusy && <p role="status" className="text-lg font-medium text-maroon">🎨 {ai("art.painting")}</p>}
-        {artDone && !artBusy && <p role="status" className="text-base text-ink-soft">{sample ? ai("art.readySample") : ai("art.ready")}</p>}
-        <button type="button" disabled={artBusy} onClick={() => void makeCard(cardFromDraft())} className="self-start rounded-lg bg-maroon px-6 py-4 text-xl font-semibold text-paper active:scale-95 disabled:opacity-50">
-          {artBusy ? ai("art.working") : artDone ? ai("art.again") : ai("art.open")}
-        </button>
-        {!artOpen ? (
-          <button type="button" disabled={artBusy} onClick={() => setArtOpen(true)} className="self-start text-base text-maroon underline">
-            {ai("art.plainOpen")}
-          </button>
-        ) : (
-          <>
-            <label htmlFor="art" className="text-base text-ink-soft">{ai("art.label")}</label>
-            <textarea id="art" rows={2} maxLength={300} className={inputClass} value={artText} onChange={(e) => setArtText(e.target.value)} placeholder={ai("art.placeholder")} />
-            <div className="flex flex-wrap gap-3">
-              <button type="button" disabled={artBusy || artText.trim().length < 3} onClick={() => void makeArt(artText)} className="rounded-lg border-2 border-maroon px-6 py-4 text-lg font-semibold text-maroon active:scale-95 disabled:opacity-50">
-                {artBusy ? ai("art.working") : ai("art.make")}
-              </button>
-              <button type="button" onClick={() => setArtOpen(false)} className="px-4 py-4 text-lg text-maroon underline">{ai("art.cancel")}</button>
-            </div>
-          </>
-        )}
-        <div className="mt-2 flex flex-col gap-2 rounded-xl border-2 border-dashed border-maroon/30 p-3">
-          <p className="text-lg font-medium">{ai("art.designHeading")}</p>
-          <p className="text-sm text-ink-soft">{ai("art.designHint")}</p>
-          {(designPic ?? sample) && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={(designPic ?? sample)!.preview} alt="" className="h-40 w-auto self-start rounded-lg object-cover shadow" />
+      {isRich && (
+        <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
+          <p className="text-lg font-medium">{ai("design.heading")}</p>
+          <label htmlFor="brief" className="text-base text-ink-soft">{ai("design.label")}</label>
+          <textarea id="brief" rows={5} maxLength={1800} className={inputClass} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder={ai("design.placeholder")} />
+          <p className="text-sm text-ink-soft">{ai("design.hint")}</p>
+          {brief.trim() && (
+            <button type="button" onClick={() => setBrief("")} className="self-start text-base text-maroon underline">{ai("design.clear")}</button>
           )}
-          <div className="flex flex-wrap gap-3">
-            <button type="button" disabled={artBusy} onClick={() => designRef.current?.click()} className="rounded-lg border-2 border-maroon px-5 py-3 text-lg font-semibold text-maroon active:scale-95 disabled:opacity-50">
-              {designPic ?? sample ? ai("art.designChange") : ai("art.designAdd")}
-            </button>
-            {(designPic ?? sample) && (
-              <button type="button" disabled={artBusy} onClick={() => { const r = (designPic ?? sample)!; void makeCard(cardFromDraft(), { mediaType: r.mediaType, data: r.data }); }} className="rounded-lg bg-maroon px-5 py-3 text-lg font-semibold text-paper active:scale-95 disabled:opacity-50">
-                {artBusy ? ai("art.designWorking") : ai("art.designUse")}
-              </button>
-            )}
-            {designPic && <button type="button" onClick={() => setDesignPic(null)} className="px-3 py-3 text-lg text-maroon underline">{ai("art.designRemove")}</button>}
-          </div>
         </div>
-        {artMsg && <p role="alert" className="text-lg font-medium text-red-800">{artMsg}</p>}
-      </div>
+      )}
+
+      {isRich && (
+        <LivePreview
+          locale={locale}
+          template={draft.template}
+          title={draft.title}
+          hosts={draft.hostNames}
+          date={draft.date}
+          time={draft.time}
+          venue={draft.venueName}
+          message={draft.message}
+        />
+      )}
 
       {isRich && (
         <div className="flex flex-col gap-4">
@@ -1077,10 +841,10 @@ export default function CreateFlow() {
 
       <button
         type="submit"
-        disabled={busy || photoBusy}
+        disabled={busy}
         className="rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper transition-transform active:scale-95 disabled:opacity-60"
       >
-        {busy ? t("creating") : result ? t("save") : t("submit")}
+        {designBusy ? ai("design.working") : busy ? t("creating") : result ? t("save") : t("submit")}
       </button>
     </form>
   );

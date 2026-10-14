@@ -21,6 +21,8 @@ export async function POST(request: Request) {
 
   try {
     const draft = await extractInvite(parsed.data.text, parsed.data.image);
+    // Guardrail: only invitations for the supported occasions are designed here.
+    if (draft.notInvite && !draft.occasion) return NextResponse.json({ error: "not_invite" }, { status: 422 });
     return NextResponse.json({ draft, questions: missingQuestions(draft) });
   } catch (e) {
     if (e instanceof AiUnavailable) return NextResponse.json({ error: "ai_unavailable" }, { status: 503 });

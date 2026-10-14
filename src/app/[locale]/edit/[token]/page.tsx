@@ -10,7 +10,6 @@ import { richOf } from "@/lib/rich";
 import { isTemplate } from "@/lib/templates";
 import { themeOf } from "@/lib/themes";
 import AppBar from "@/components/app/AppBar";
-import DownloadCard from "@/components/invite/DownloadCard";
 import AutoRefresh from "./AutoRefresh";
 import DeleteInvite from "./DeleteInvite";
 import EditForm from "./EditForm";
@@ -161,8 +160,6 @@ export default async function EditPage({
         when={when}
         rows={householdRows}
       />
-
-      <DownloadCard slug={event.slug} locale={locale} />
 
       <EditForm
         token={token}

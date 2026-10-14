@@ -51,8 +51,8 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   const map = mapLink(event);
   const showCountdown = rich.countdown;
   const fullCard = rich.heroFullCard && !!photo;
-  // AI-generated CSS takes priority; fall back to keyword-based extraction from the design prompt.
-  const hasAiCSS = fullCard && !!rich.inviteCSS;
+  // AI-generated CSS (custom design) takes priority; legacy full-card invites fall back to keyword-based extraction.
+  const hasAiCSS = !!rich.inviteCSS;
   const designCSS = !hasAiCSS && fullCard ? designPromptToCSS(rich.designPrompt) : null;
   const style = {
     "--paper": c.paper, "--paper-deep": c.paperDeep, "--ink": c.ink, "--ink-soft": c.inkSoft,
@@ -62,12 +62,14 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   } as React.CSSProperties;
   // Sanitise the AI-generated CSS to prevent XSS before injecting.
   const aiCSS = hasAiCSS ? sanitizeCSS(rich.inviteCSS!) : null;
+  // Template colours act as defaults (zero specificity) so the custom design's own variables win.
+  const defaultVars = `:where(.design-ai){--paper:${c.paper};--paper-deep:${c.paperDeep};--ink:${c.ink};--ink-soft:${c.inkSoft};--maroon:${c.accent};--maroon-deep:${c.accentDeep};--saffron:${c.highlight}}`;
 
   return (
     <>
     {fullCard && !preview && <InviteOpener slug={event.slug} />}
-    <div style={{ ...style, ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} ${hasAiCSS ? "design-ai" : ""} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
-      {aiCSS && <style dangerouslySetInnerHTML={{ __html: aiCSS }} />}
+    <div style={{ ...(hasAiCSS ? {} : style), ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} ${hasAiCSS ? "design-ai" : ""} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
+      {aiCSS && <style dangerouslySetInnerHTML={{ __html: `${defaultVars}${aiCSS}` }} />}
       {fullCard ? (
         <header className="hero hero-cardfull">
           {/* The card's own colours, blurred, become the backdrop so the frame always blends with it. */}

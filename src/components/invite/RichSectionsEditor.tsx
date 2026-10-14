@@ -1,10 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Rich } from "@/lib/rich";
-import { photoUrl, uploadPhoto } from "@/lib/upload-client";
 
 type Row = { name: string; date: string; time: string; venue: string; note: string };
 
@@ -23,11 +21,6 @@ function toRow(e: Rich["itinerary"][number]): Row {
 export default function RichSectionsEditor({ value, onChange }: { value: Rich; onChange: (r: Rich) => void }) {
   const t = useTranslations("Editor");
   const [rows, setRows] = useState<Row[]>(() => value.itinerary.map(toRow));
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState(false);
-  const galleryRef = useRef<HTMLInputElement>(null);
-  const storyRef = useRef<HTMLInputElement>(null);
-  const storyIdx = useRef(0);
 
   function setItinerary(next: Row[]) {
     setRows(next);
@@ -44,16 +37,6 @@ export default function RichSectionsEditor({ value, onChange }: { value: Rich; o
   const patchRow = (i: number, p: Partial<Row>) => setItinerary(rows.map((r, n) => (n === i ? { ...r, ...p } : r)));
   const setStory = (story: Rich["story"]) => onChange({ ...value, story });
   const patchStory = (i: number, p: Partial<Rich["story"][number]>) => setStory(value.story.map((s, n) => (n === i ? { ...s, ...p } : s)));
-
-  async function upload(files: FileList | null, apply: (paths: string[]) => void) {
-    if (!files?.length) return;
-    setBusy(true); setErr(false);
-    try {
-      const paths: string[] = [];
-      for (const f of Array.from(files)) paths.push(await uploadPhoto(f));
-      apply(paths);
-    } catch { setErr(true); } finally { setBusy(false); }
-  }
 
   const box = "flex flex-col gap-4 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4";
   const h = "font-display text-2xl text-maroon";
@@ -88,35 +71,12 @@ export default function RichSectionsEditor({ value, onChange }: { value: Rich; o
               <input className={input} placeholder={t("storyWhen")} value={s.when ?? ""} maxLength={40} onChange={(e) => patchStory(i, { when: e.target.value })} />
             </div>
             <textarea rows={2} className={input} placeholder={t("storyText")} value={s.text ?? ""} maxLength={400} onChange={(e) => patchStory(i, { text: e.target.value })} />
-            {s.photo && <img src={photoUrl(s.photo)} alt="" className="h-24 w-24 rounded-lg object-cover" />}
             <div className="flex flex-wrap gap-3">
-              <button type="button" disabled={busy} className={small} onClick={() => { storyIdx.current = i; storyRef.current?.click(); }}>{s.photo ? t("changePhoto") : t("addPhoto")}</button>
               <button type="button" className="text-base text-red-800 underline" onClick={() => setStory(value.story.filter((_, n) => n !== i))}>{t("remove")}</button>
             </div>
           </div>
         ))}
         {value.story.length < 8 && <button type="button" className={`${small} self-start`} onClick={() => setStory([...value.story, { title: "" }])}>{t("addStory")}</button>}
-        <input ref={storyRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const i = storyIdx.current; void upload(e.target.files, ([p]) => patchStory(i, { photo: p })); e.target.value = ""; }} />
-      </section>
-
-      <section className={box}>
-        <h3 className={h}>{t("gallery")}</h3>
-        <p className="text-base text-ink-soft">{t("galleryHint")}</p>
-        {value.gallery.length > 0 && (
-          <div className="grid grid-cols-4 gap-2">
-            {value.gallery.map((p, i) => (
-              <div key={p} className="relative">
-                <img src={photoUrl(p)} alt="" className="aspect-square w-full rounded-lg object-cover" />
-                <button type="button" aria-label={t("remove")} className="absolute right-1 top-1 h-7 w-7 rounded-full bg-black/70 text-white" onClick={() => onChange({ ...value, gallery: value.gallery.filter((_, n) => n !== i) })}>×</button>
-              </div>
-            ))}
-          </div>
-        )}
-        {value.gallery.length < 8 && (
-          <button type="button" disabled={busy} className={`${small} self-start`} onClick={() => galleryRef.current?.click()}>{busy ? t("uploading") : t("addPhotos")}</button>
-        )}
-        <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void upload(e.target.files, (ps) => onChange({ ...value, gallery: [...value.gallery, ...ps].slice(0, 8) })); e.target.value = ""; }} />
-        {err && <p role="alert" className="text-base font-medium text-red-800">{t("uploadError")}</p>}
       </section>
 
       <section className={box}>

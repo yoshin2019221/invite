@@ -139,7 +139,9 @@
     "step1": "Describe",
     "step2": "Design",
     "step3": "Details",
-    "save": "Save changes"
+    "save": "Save changes",
+    "livePreview": "Live preview",
+    "livePreviewNote": "Updates as you type. Names and dates are yours; sample text is hidden."
   },
   "Created": {
     "previewHeading": "How your invite looks to guests",
@@ -158,7 +160,8 @@
     "cardIntro": "Download the card and share it on WhatsApp, Instagram, or anywhere.",
     "downloadCard": "Download card",
     "whatsappCard": "Share on WhatsApp",
-    "cardShareTip": "Tip: Download the card, then attach it in WhatsApp along with the invite link for the best experience."
+    "cardShareTip": "Tip: Download the card, then attach it in WhatsApp along with the invite link for the best experience.",
+    "designFailed": "We could not apply your custom design this time, so your invite uses the template look. Tap \"Edit details\" and save again to retry."
   },
   "Guest": {
     "hostedBy": "Hosted by {names}",
@@ -384,7 +387,8 @@
     "errors": {
       "unavailable": "We could not read that right now. You can choose the occasion yourself instead.",
       "busy": "Too many tries. Please wait a minute.",
-      "image": "We could not use that picture. Try another."
+      "image": "We could not use that picture. Try another.",
+      "notInvite": "We can only design invitations for a birthday, housewarming, pooja, baby event, party (kitty party, get-together) or wedding. Tell us about one of these."
     },
     "speak": "Speak instead of typing",
     "listening": "Listening…",
@@ -429,7 +433,15 @@
     "micHint": "Speak clearly. Tap Stop when you are done.",
     "picHeading": "Have an invite you love? Start from a picture",
     "picDesc": "Got an invitation you received or saw somewhere? Upload the picture, add your own details, and we'll make you one in the same style.",
-    "picNote": "We use only its look — colours, patterns and style. Your names, date and venue are yours; the original's text is never copied."
+    "picNote": "We use only its look — colours, patterns and style. Your names, date and venue are yours; the original's text is never copied.",
+    "design": {
+      "heading": "Custom design",
+      "label": "Describe the look you want. Colours, mood, decorations, and any motion such as falling petals or shimmering gold.",
+      "placeholder": "Deep green and gold, elegant and traditional, with soft golden sparkles and gently falling marigold petals.",
+      "hint": "Optional. Leave empty to keep the template as it is. The AI restyles your chosen template to match your words.",
+      "clear": "Remove custom design",
+      "working": "Designing your invite…"
+    }
   },
   "Card": {
     "heading": "Save as a picture",
