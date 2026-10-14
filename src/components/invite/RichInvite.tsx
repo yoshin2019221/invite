@@ -12,6 +12,7 @@ import { photoPublicUrl } from "@/lib/supabase/admin";
 import { templateFontClass } from "@/lib/template-fonts";
 import { templateOf } from "@/lib/templates";
 import Countdown from "./Countdown";
+import InviteOpener from "./InviteOpener";
 import LottieBg from "./LottieBg";
 import MusicButton from "./MusicButton";
 import Reveal from "./Reveal";
@@ -63,6 +64,8 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   const aiCSS = hasAiCSS ? sanitizeCSS(rich.inviteCSS!) : null;
 
   return (
+    <>
+    {fullCard && !preview && <InviteOpener slug={event.slug} />}
     <div style={{ ...style, ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} ${hasAiCSS ? "design-ai" : ""} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
       {aiCSS && <style dangerouslySetInnerHTML={{ __html: aiCSS }} />}
       {fullCard ? (
@@ -213,5 +216,6 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
         <MusicButton src={`/audio/${def.music}.mp3`} playLabel={t("musicPlay")} pauseLabel={t("musicPause")} />
       )}
     </div>
+    </>
   );
 }

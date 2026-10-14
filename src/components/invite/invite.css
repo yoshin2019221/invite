@@ -262,6 +262,38 @@ html[lang="hi"] .tpl-jharokha .hero-title { text-transform: none; letter-spacing
 .tpl-ivory .event-card { border-radius: 18px; background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
 .tpl-ivory .count-cell { background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
 
+/* ---------- Invite opener (envelope animation) ---------- */
+.opener-stage { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 45%, #fff8f0 0%, #f3e8d8 60%, #e8d5c0 100%); }
+.opener-env { position: relative; width: min(320px, 85vw); aspect-ratio: 4/3; perspective: 900px; }
+/* envelope body */
+.opener-body { position: absolute; inset: 0; border-radius: 8px; overflow: hidden;
+  background: linear-gradient(135deg, #f7e6d0 0%, #e8cdb0 100%);
+  box-shadow: 0 12px 40px rgba(120,80,40,.25), inset 0 0 0 2px rgba(180,140,90,.25); }
+/* decorative seal */
+.opener-seal { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%);
+  font-size: 2.4rem; opacity: .5; filter: sepia(1) saturate(.6); }
+/* triangular flap */
+.opener-flap { position: absolute; top: 0; left: 0; right: 0; height: 55%; z-index: 2;
+  background: linear-gradient(160deg, #eedcc2 0%, #d6be9c 100%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: top center; transform: rotateX(0deg);
+  transition: transform .7s cubic-bezier(.4,.05,.2,1); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.opener-env--open .opener-flap { transform: rotateX(180deg); }
+/* card that rises out */
+.opener-card { position: absolute; left: 10%; right: 10%; bottom: 8%; top: 20%; z-index: 1;
+  border-radius: 6px; overflow: hidden;
+  transform: translateY(0); transition: transform 1s cubic-bezier(.16,1,.3,1) .5s; }
+.opener-card--rise { transform: translateY(-75%); }
+.opener-card-inner { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: linear-gradient(160deg, #fffbf5 0%, #fff3e6 100%);
+  border: 2px solid rgba(180,120,60,.2); border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(120,80,40,.18); }
+.opener-card-text { font-family: var(--fd), serif; font-size: clamp(1.4rem, 5vw, 1.8rem); color: #8b5e3c;
+  letter-spacing: .06em; font-weight: 400; }
+.opener-card-ornament { font-size: 1.2rem; color: #c9a86c; animation: openerPulse 1.4s ease-in-out infinite; }
+@keyframes openerPulse { 0%,100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .opener-stage { display: none; } }
+
 /* ---------- AI design-prompt derived styling ---------- */
 /* When the invite has an AI-generated card, the HTML page picks up matching colours from the design prompt.
    These classes add ornamental touches to make the page feel cohesive with the card. */
