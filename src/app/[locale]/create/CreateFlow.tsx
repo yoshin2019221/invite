@@ -353,11 +353,32 @@ export default function CreateFlow() {
     }
     setBusy(true);
     setMessage(null);
-    // Generate AI card now (with all final details) if the user hasn't made one yet and autoArt is on.
+    // Generate AI card and matching web-invite CSS in parallel (with all final details).
     let cardPath = draft.photoPath;
-    if (autoArt && !cardPath && (draft.title.trim() || draft.occasion)) {
-      cardPath = await makeCard(cardFromDraft());
+    let inviteCSS: string | undefined;
+    const designPrompt = brief.trim() || undefined;
+
+    if (autoArt && (draft.title.trim() || draft.occasion)) {
+      const promises: [Promise<string | null>, Promise<string | undefined>] = [
+        // Generate card image if not already done
+        !cardPath ? makeCard(cardFromDraft()) : Promise.resolve(cardPath),
+        // Generate matching CSS for the web invite page
+        designPrompt
+          ? fetch("/api/v1/ai/invite-css", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ designPrompt, occasion: draft.occasion, title: draft.title.trim() }),
+            })
+              .then((r) => (r.ok ? r.json() : null))
+              .then((d: { css?: string } | null) => d?.css)
+              .catch(() => undefined)
+          : Promise.resolve(undefined),
+      ];
+      const [cp, css] = await Promise.all(promises);
+      if (cp) cardPath = cp;
+      inviteCSS = css;
     }
+
     const payload = {
       occasion: draft.occasion,
       title: draft.title.trim(),
@@ -372,7 +393,7 @@ export default function CreateFlow() {
       photoPath: cardPath ?? undefined,
       theme: draft.theme,
       template: draft.template,
-      rich: TEMPLATE_DEFS[draft.template].rich ? { ...draft.rich, designPrompt: brief.trim() || undefined } : undefined,
+      rich: TEMPLATE_DEFS[draft.template].rich ? { ...draft.rich, designPrompt, inviteCSS } : undefined,
     };
     try {
       if (result) {

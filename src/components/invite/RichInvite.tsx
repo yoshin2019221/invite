@@ -6,6 +6,7 @@ import RsvpForm from "@/app/[locale]/e/[slug]/RsvpForm";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { formatTimeOnly, intlLocale, mapLink, type PublicEvent } from "@/lib/events";
 import { designPromptToCSS } from "@/lib/design-to-css";
+import { sanitizeCSS } from "@/lib/sanitize-css";
 import { monogram, richOf } from "@/lib/rich";
 import { photoPublicUrl } from "@/lib/supabase/admin";
 import { templateFontClass } from "@/lib/template-fonts";
@@ -49,17 +50,21 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   const map = mapLink(event);
   const showCountdown = rich.countdown;
   const fullCard = rich.heroFullCard && !!photo;
-  // If the host used AI to design a card, derive matching colours for the HTML invite from the design prompt.
-  const designCSS = fullCard ? designPromptToCSS(rich.designPrompt) : null;
+  // AI-generated CSS takes priority; fall back to keyword-based extraction from the design prompt.
+  const hasAiCSS = fullCard && !!rich.inviteCSS;
+  const designCSS = !hasAiCSS && fullCard ? designPromptToCSS(rich.designPrompt) : null;
   const style = {
     "--paper": c.paper, "--paper-deep": c.paperDeep, "--ink": c.ink, "--ink-soft": c.inkSoft,
     "--maroon": c.accent, "--maroon-deep": c.accentDeep, "--saffron": c.highlight,
-    // Override with AI-derived colours when available
+    // Override with keyword-derived colours when no AI CSS is available
     ...(designCSS?.vars ?? {}),
   } as React.CSSProperties;
+  // Sanitise the AI-generated CSS to prevent XSS before injecting.
+  const aiCSS = hasAiCSS ? sanitizeCSS(rich.inviteCSS!) : null;
 
   return (
-    <div style={{ ...style, ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
+    <div style={{ ...style, ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} ${hasAiCSS ? "design-ai" : ""} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
+      {aiCSS && <style dangerouslySetInnerHTML={{ __html: aiCSS }} />}
       {fullCard ? (
         <header className="hero hero-cardfull">
           {/* The card's own colours, blurred, become the backdrop so the frame always blends with it. */}

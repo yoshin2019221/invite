@@ -36,6 +36,8 @@ export const richSchema = z.object({
   heroFullCard: z.boolean().default(false),
   // The AI design brief used to generate the card. Used to style the HTML web invite to match.
   designPrompt: z.string().trim().max(4000).optional(),
+  // AI-generated CSS that styles the web invite to match the card's design.
+  inviteCSS: z.string().trim().max(6000).optional(),
 });
 export type Rich = z.infer<typeof richSchema>;
 
