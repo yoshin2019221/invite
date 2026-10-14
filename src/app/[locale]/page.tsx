@@ -9,20 +9,6 @@ import RsvpDemo from "@/components/home/RsvpDemo";
 import TextSize from "@/components/home/TextSize";
 import "./home.css";
 
-// A phone-sized live preview of a real template, scaled down. Opens the full preview when tapped.
-function Phone({ locale, id, label, className = "" }: { locale: string; id: string; label: string; className?: string }) {
-  return (
-    <div className={`phone ${className}`}>
-      <iframe src={`/${locale}/preview/${id}`} title={label} loading="lazy" tabIndex={-1} aria-hidden />
-    </div>
-  );
-}
-
-const LOOKS = ["royal", "jharokha", "rangeela", "ivory", "bloom", "griha", "pooja", "confetti", "blossom", "night"] as const;
-const OCC: Record<(typeof LOOKS)[number], string> = {
-  royal: "wedding", jharokha: "wedding", rangeela: "wedding", ivory: "wedding", bloom: "wedding", griha: "housewarming", pooja: "pooja", confetti: "birthday", blossom: "baby", night: "party",
-};
-
 export default function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = use(params);
   if (!isLocale(locale)) notFound();
@@ -31,8 +17,6 @@ export default function HomePage({ params }: { params: Promise<{ locale: string 
   const brand = useTranslations("Brand");
   const demo = useTranslations("Home.demo");
   const lang = useTranslations("Language");
-  const occ = useTranslations("Occasions");
-  const tpl = useTranslations("Templates");
   const other: Locale = locale === "en" ? "hi" : "en";
 
   return (
@@ -50,23 +34,6 @@ export default function HomePage({ params }: { params: Promise<{ locale: string 
         </header>
 
         <Hero />
-      </section>
-
-      <section id="designs" className="h-sec">
-        <h2 className="h-h2">{t("looksHeading")}</h2>
-        <p className="h-p">{t("looksSub")}</p>
-        <ul className="h-strip">
-          {LOOKS.map((id) => (
-            <li key={id} className="h-look">
-              <Link href={`/${locale}/preview/${id}`} className="h-look-link">
-                <Phone locale={locale} id={id} label={tpl(id)} />
-                <p className="h-look-name">{tpl(id)}</p>
-                <p className="h-look-occ">{occ(OCC[id])} · {t("tapOpen")}</p>
-              </Link>
-              <Link href={`/${locale}/create?template=${id}`} className="h-look-use">{t("useThis")}</Link>
-            </li>
-          ))}
-        </ul>
       </section>
 
       <section className="h-sec h-steps">

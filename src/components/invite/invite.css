@@ -1,13 +1,8 @@
-/* Rich invite templates. Colours come from CSS variables set inline on .tpl (see templates.ts). */
+/* Base invite look. Colours come from CSS variables (see templates.ts); a custom design overrides them via .design-ai. */
 .tpl { --fd: var(--nf-display), var(--nf-display-hi), serif; --fb: var(--nf-body), var(--nf-body-hi), system-ui, sans-serif; --fs: var(--fd);
   background: var(--paper); color: var(--ink); font-family: var(--fb); font-size: 18px; line-height: 1.6; min-height: 100dvh; overflow-x: clip; }
-.tpl-royal { --fd: var(--font-cinzel), var(--nf-display-hi), serif; --fb: var(--font-cormorant), var(--nf-body-hi), serif; --fs: var(--font-script), var(--nf-display-hi), cursive; font-size: 20px; }
-.tpl-bloom { --fd: var(--font-playfair), var(--nf-display-hi), serif; --fb: var(--font-jost), var(--nf-body-hi), sans-serif; --fs: var(--font-script), var(--nf-display-hi), cursive; }
-.tpl-griha { --fd: var(--font-playfair), var(--nf-display-hi), serif; --fb: var(--font-jost), var(--nf-body-hi), sans-serif; }
-.tpl-pooja { --fd: var(--font-yatra), var(--nf-display-hi), serif; --fb: var(--font-jost), var(--nf-body-hi), sans-serif; }
-.tpl-confetti { --fd: var(--font-fredoka), var(--nf-display-hi), sans-serif; --fb: var(--font-jost), var(--nf-body-hi), sans-serif; }
-.tpl-blossom { --fd: var(--font-playfair), var(--nf-display-hi), serif; --fb: var(--font-jost), var(--nf-body-hi), sans-serif; --fs: var(--font-script), var(--nf-display-hi), cursive; }
-.tpl-night { --fd: var(--font-cinzel), var(--nf-display-hi), serif; --fb: var(--font-jost), var(--nf-body-hi), sans-serif; }
+
+.tpl-default { --fd: var(--font-playfair), var(--nf-display-hi), serif; --fb: var(--font-jost), var(--nf-body-hi), sans-serif; --fs: var(--font-script), var(--nf-display-hi), cursive; }
 
 /* ---------- hero ---------- */
 .hero { position: relative; min-height: 100dvh; display: flex; flex-direction: column; isolation: isolate; overflow: hidden; text-align: center;
@@ -84,7 +79,7 @@ html[lang="hi"] .hero-kicker { letter-spacing: .04em; text-transform: none; font
 .sec + .sec { border-top: 1px solid color-mix(in srgb, var(--maroon) 18%, transparent); margin-top: 48px; }
 .sec-title { font-family: var(--fd); font-weight: 400; font-size: clamp(1.9rem, 7vw, 2.5rem); color: var(--maroon); line-height: 1.2; margin-bottom: 26px; text-wrap: balance; }
 .message { font-family: var(--fs); font-size: 1.55rem; line-height: 1.55; white-space: pre-line; color: var(--ink); text-wrap: pretty; }
-.tpl:not(.tpl-royal):not(.tpl-bloom):not(.tpl-blossom) .message { font-family: var(--fb); font-size: 1.25rem; }
+.tpl .message { font-family: var(--fb); font-size: 1.25rem; }
 
 .count-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .count-cell { display: flex; flex-direction: column; align-items: center; padding: 16px 4px; border-radius: 16px; background: color-mix(in srgb, var(--paper-deep) 80%, transparent); border: 1px solid color-mix(in srgb, var(--saffron) 40%, transparent); }
@@ -125,80 +120,19 @@ html[lang="hi"] .hero-kicker { letter-spacing: .04em; text-transform: none; font
 @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } .hero-scroll span { animation: none; opacity: 1; } }
 
 /* ---------- ROYAL (dark wedding, gold) ---------- */
-.tpl-royal .hero { background: radial-gradient(90% 60% at 50% 38%, #3b1f2c 0%, var(--paper) 72%); }
-.tpl-royal .hero::before { content: ""; position: absolute; z-index: 2; inset: 14px; border: 1px solid var(--maroon); pointer-events: none; }
-.tpl-royal .hero::after { content: ""; position: absolute; z-index: 2; inset: 22px; border: 1px solid color-mix(in srgb, var(--maroon) 45%, transparent); pointer-events: none; }
-.tpl-royal .hero-title { text-transform: uppercase; letter-spacing: .12em; font-size: clamp(2.1rem, 9vw, 3.6rem); font-weight: 600; color: var(--maroon); }
-.tpl-royal .hero-hosts { font-size: 1.55rem; color: var(--ink); }
-.tpl-royal .hero-date { flex-direction: column; align-items: center; gap: 0; margin-top: 18px; padding-top: 18px; position: relative; }
-.tpl-royal .hero-date::before { content: "❖"; position: absolute; top: -10px; color: var(--maroon); font-size: 1.1rem; }
-.tpl-royal .hero-date-day { font-size: clamp(3.4rem, 15vw, 5rem); color: var(--ink); }
-.tpl-royal .hero-date-rest { text-align: center; max-width: none; letter-spacing: .2em; text-transform: uppercase; font-size: 1.05rem; color: var(--maroon); }
-.tpl-royal .btn-main { background: transparent; border: 1px solid var(--maroon); color: var(--maroon); letter-spacing: .08em; }
-.tpl-royal .sec-title { text-transform: uppercase; letter-spacing: .14em; font-size: clamp(1.4rem, 6vw, 1.9rem); }
-.tpl-royal .sec-title::after { content: ""; display: block; width: 64px; height: 1px; background: var(--maroon); margin: 16px auto 0; }
-.tpl-royal .event-card, .tpl-royal .count-cell { border-radius: 4px; background: transparent; border-color: color-mix(in srgb, var(--maroon) 55%, transparent); }
-.tpl-royal .story-photo, .tpl-royal .gallery-img { border-radius: 2px; }
 
 /* ---------- BLOOM (blush wedding, arch photo) ---------- */
-.tpl-bloom .hero { background: linear-gradient(180deg, #fbe3de 0%, var(--paper) 70%); }
-.tpl-bloom .hero-photo { position: relative; inset: auto; order: 2; width: min(78%, 300px); aspect-ratio: 3/4; margin: 4px auto 0; border-radius: 999px 999px 24px 24px; overflow: hidden; border: 6px solid var(--paper); box-shadow: 0 0 0 1.5px var(--maroon); z-index: 2; }
-.tpl-bloom .hero-photo::after { display: none; }
-.tpl-bloom .hero-title { font-style: italic; }
-.tpl-bloom .hero-hosts { font-size: 1.45rem; }
-.tpl-bloom .event-card { border-radius: 999px 999px 24px 24px / 40px 40px 24px 24px; }
-.tpl-bloom .story-photo, .tpl-bloom .gallery-img { border-radius: 999px 999px 18px 18px; }
 
 /* ---------- GRIHA (housewarming, marigold torana + door) ---------- */
-.tpl-griha .hero { background: linear-gradient(180deg, #fde8c0, var(--paper) 65%); }
-.tpl-griha .hero::before { content: ""; position: absolute; z-index: 2; left: 0; right: 0; top: 0; height: 64px;
-  background: radial-gradient(circle at 20px 18px, #f59e0b 0 11px, #b45309 11px 13px, transparent 13px) 0 0/40px 44px repeat-x,
-    radial-gradient(circle at 20px 40px, #2f6b3a 0 7px, transparent 8px) 0 0/40px 44px repeat-x; }
-.tpl-griha .hero-top { padding-top: 56px; }
-.tpl-griha .hero-title { color: var(--maroon-deep); }
-.tpl-griha .hero-photo { position: relative; inset: auto; order: 2; width: min(70%, 260px); aspect-ratio: 3/4; margin: 0 auto; border-radius: 120px 120px 10px 10px; overflow: hidden; border: 5px solid var(--maroon); z-index: 2; }
-.tpl-griha .hero-photo::after { display: none; }
-.tpl-griha .event-card { border-left: 6px solid var(--saffron); border-radius: 12px; }
 
 /* ---------- POOJA (diya glow, dark vermilion) ---------- */
-.tpl-pooja .hero { background: radial-gradient(60% 45% at 50% 42%, #7a2d0c 0%, #3d1a0e 55%, var(--paper) 100%); }
-.tpl-pooja .hero-body::before { content: "🪔"; font-size: 2.6rem; filter: drop-shadow(0 0 18px #ffb347); animation: flicker 3s ease-in-out infinite; }
 @keyframes flicker { 0%,100% { filter: drop-shadow(0 0 14px #ffb347); } 50% { filter: drop-shadow(0 0 26px #ffd27a); } }
-@media (prefers-reduced-motion: reduce) { .tpl-pooja .hero-body::before { animation: none; } }
-.tpl-pooja .hero-title { color: #ffd27a; text-shadow: 0 2px 24px rgba(245,158,11,.45); }
-.tpl-pooja .hero-date-day { color: #ffb347; }
-.tpl-pooja .hero-photo::after { background: linear-gradient(to bottom, rgba(42,15,8,.55), rgba(42,15,8,.92) 75%); }
-.tpl-pooja .event-card, .tpl-pooja .count-cell { background: rgba(255,210,122,.07); }
 
 /* ---------- CONFETTI (birthday / party, bright & chunky) ---------- */
-.tpl-confetti .hero { background: var(--paper); }
-.tpl-confetti .hero-title { transform: rotate(-2deg); color: var(--ink); background: #ffd93d; padding: .12em .5em .2em; border-radius: 22px; box-shadow: 6px 6px 0 var(--maroon); font-weight: 700; }
-.tpl-confetti .hero-kicker { background: var(--saffron); color: #fff; padding: 4px 16px; border-radius: 999px; letter-spacing: .08em; }
-.tpl-confetti .hero-hosts { font-family: var(--fd); font-size: 1.3rem; margin-top: 8px; }
-.tpl-confetti .hero-date-day { color: var(--maroon); }
-.tpl-confetti .btn-main { box-shadow: 4px 4px 0 var(--ink); }
-.tpl-confetti .sec-title { font-weight: 700; }
-.tpl-confetti .event-card, .tpl-confetti .count-cell { border: 3px solid var(--ink); border-radius: 18px; background: #fff; box-shadow: 4px 4px 0 var(--ink); }
-.tpl-confetti .hero-photo { position: relative; inset: auto; order: 2; width: min(72%, 280px); aspect-ratio: 1; margin: 0 auto; border-radius: 50%; overflow: hidden; border: 5px solid var(--ink); z-index: 2; }
-.tpl-confetti .hero-photo::after { display: none; }
 
 /* ---------- BLOSSOM (baby, soft blue) ---------- */
-.tpl-blossom .hero { background: linear-gradient(180deg, #e6f1fa, var(--paper) 70%); }
-.tpl-blossom .hero::before { content: ""; position: absolute; z-index: 0; width: 120%; height: 260px; left: -10%; bottom: -80px; border-radius: 50%; background: color-mix(in srgb, var(--saffron) 22%, transparent); filter: blur(10px); }
-.tpl-blossom .hero-title { font-style: italic; }
-.tpl-blossom .hero-hosts { font-size: 1.45rem; }
-.tpl-blossom .hero-photo { position: relative; inset: auto; order: 2; width: min(66%, 250px); aspect-ratio: 1; margin: 0 auto; border-radius: 50%; overflow: hidden; border: 8px solid #fff; box-shadow: 0 8px 30px rgba(47,95,134,.25); z-index: 2; }
-.tpl-blossom .hero-photo::after { display: none; }
-.tpl-blossom .event-card, .tpl-blossom .count-cell { border-radius: 28px; background: #fff; border-color: transparent; box-shadow: 0 6px 22px rgba(47,95,134,.12); }
 
 /* ---------- NIGHT (party, neon on violet) ---------- */
-.tpl-night .hero { background: radial-gradient(80% 55% at 50% 30%, #3a1f5c 0%, var(--paper) 75%); }
-.tpl-night .hero-title { text-transform: uppercase; letter-spacing: .08em; color: #fff; text-shadow: 0 0 18px var(--maroon), 0 0 42px color-mix(in srgb, var(--maroon) 60%, transparent); font-size: clamp(2rem, 9vw, 3.4rem); }
-.tpl-night .hero-date-day { color: var(--saffron); text-shadow: 0 0 20px color-mix(in srgb, var(--saffron) 50%, transparent); }
-.tpl-night .btn-main { box-shadow: 0 0 24px color-mix(in srgb, var(--maroon) 70%, transparent); }
-.tpl-night .sec-title { text-transform: uppercase; letter-spacing: .1em; font-size: clamp(1.4rem, 6vw, 1.9rem); color: #fff; }
-.tpl-night .event-card, .tpl-night .count-cell { background: rgba(255,255,255,.04); border-color: color-mix(in srgb, var(--maroon) 55%, transparent); }
-.tpl-night .hero-photo::after { background: linear-gradient(to bottom, rgba(18,10,30,.45), rgba(18,10,30,.92) 78%); }
 
 /* dark templates: keep guest forms readable */
 .tpl-dark input, .tpl-dark textarea { color: #1a1a1a; }
@@ -207,8 +141,6 @@ html[lang="hi"] .tpl .hero-title { text-transform: none; letter-spacing: 0; line
 
 /* On dark templates the reply form sits on a light panel so inputs stay readable. */
 .tpl-dark .rsvp-wrap { --paper: #fbf3e4; --ink: #2a1a14; --ink-soft: #5c4a40; --maroon: #7a4a12; --maroon-deep: #5c3508; background: #fbf3e4; border-radius: 22px; padding: 6px; color: var(--ink); }
-.tpl-pooja .rsvp-wrap { --maroon: #9a4f06; }
-.tpl-night .rsvp-wrap { --maroon: #a3256b; }
 .tpl-dark .rsvp-wrap .rounded-3xl { border-color: transparent; background: transparent; }
 html[lang="hi"] .hero-date-rest, html[lang="hi"] .tpl .event-month { letter-spacing: 0 !important; text-transform: none !important; }
 
@@ -217,50 +149,11 @@ html[lang="hi"] .hero-date-rest, html[lang="hi"] .tpl .event-month { letter-spac
 html[lang="hi"] .hero-mono { font-family: var(--nf-display-hi), serif; }
 
 /* ---------- JHAROKHA (plum + gold arched window with monogram) ---------- */
-.tpl-jharokha .hero { background: radial-gradient(100% 70% at 50% 20%, #4a2360 0%, var(--paper) 75%); }
-.tpl-jharokha .hero::before { content: ""; position: absolute; z-index: 1; left: 50%; top: 64px; bottom: 56px; width: min(88%, 360px); transform: translateX(-50%);
-  border: 2px solid var(--maroon); border-radius: 999px 999px 18px 18px; box-shadow: 0 0 0 7px var(--paper), 0 0 0 9px color-mix(in srgb, var(--maroon) 60%, transparent);
-  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.06), transparent 60%), repeating-radial-gradient(circle at 50% 100%, transparent 0 22px, rgba(230,194,122,.06) 22px 23px); pointer-events: none; }
-.tpl-jharokha .hero-body { padding: 70px 40px 90px; max-width: 380px; }
-.tpl-jharokha .hero-mono { display: block; font-size: 3.4rem; margin-bottom: 6px; }
-.tpl-jharokha .hero-kicker { letter-spacing: .3em; font-size: 14px; }
-.tpl-jharokha .hero-title { font-size: clamp(1.7rem, 7.2vw, 2.5rem); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
-.tpl-jharokha .hero-hosts { font-size: 1.3rem; color: var(--ink); }
-.tpl-jharokha .hero-date-day { color: var(--ink); font-size: 3.6rem; }
-.tpl-jharokha .btn-main { background: var(--maroon); color: #2b1237; }
-.tpl-jharokha .sec-title { text-transform: uppercase; letter-spacing: .14em; font-size: clamp(1.4rem, 6vw, 1.9rem); }
-.tpl-jharokha .event-card { border-radius: 999px 999px 16px 16px / 36px 36px 16px 16px; background: transparent; border-color: color-mix(in srgb, var(--maroon) 55%, transparent); }
-.tpl-jharokha .count-cell { border-radius: 999px 999px 10px 10px; background: transparent; }
-.tpl-jharokha .story-photo, .tpl-jharokha .gallery-img { border-radius: 999px 999px 14px 14px; }
 html[lang="hi"] .tpl-jharokha .hero-title { text-transform: none; letter-spacing: 0; }
 
 /* ---------- RANGEELA (bold pink / teal / mustard, patterned frame + oval) ---------- */
-.tpl-rangeela .hero { background: var(--paper); }
-.tpl-rangeela .hero::before { content: ""; position: absolute; z-index: 1; inset: 10px; border: 16px solid transparent; border-radius: 6px; pointer-events: none;
-  background: linear-gradient(var(--paper), var(--paper)) padding-box, repeating-conic-gradient(#d61f7a 0 25%, #1c9a8c 0 50%, #f5b52e 0 75%, #fff6e6 0 100%) 0 0/32px 32px border-box; }
-.tpl-rangeela .hero::after { content: ""; position: absolute; z-index: 1; left: 50%; top: 96px; bottom: 76px; width: min(82%, 340px); transform: translateX(-50%); border: 3px solid var(--maroon); border-radius: 50%; background: color-mix(in srgb, #1c9a8c 10%, var(--paper)); box-shadow: inset 0 0 0 7px var(--paper), inset 0 0 0 9px color-mix(in srgb, var(--maroon) 50%, transparent); pointer-events: none; }
-.tpl-rangeela .hero-body { padding: 96px 64px 90px; max-width: 400px; gap: 8px; }
-.tpl-rangeela .hero-kicker { background: #1c9a8c; color: #fff; padding: 3px 14px; border-radius: 999px; letter-spacing: .12em; font-size: 14px; }
-.tpl-rangeela .hero-title { font-size: clamp(1.6rem, 7vw, 2.3rem); font-weight: 700; font-style: italic; }
-.tpl-rangeela .hero-hosts { font-size: 1.15rem; }
-.tpl-rangeela .hero-date-day { font-size: 3.4rem; color: #1c9a8c; }
-.tpl-rangeela .btn-main { box-shadow: 4px 4px 0 var(--ink); padding: 12px 24px; font-size: 1rem; }
-.tpl-rangeela .event-card { border: 3px solid var(--ink); border-radius: 22px; background: #fff; box-shadow: 4px 4px 0 var(--maroon); }
-.tpl-rangeela .count-cell { border: 3px solid var(--ink); background: #fff; border-radius: 16px; box-shadow: 3px 3px 0 #1c9a8c; }
 
 /* ---------- IVORY (ivory paper, green + rose-gold, floral vine borders, monogram ring) ---------- */
-.tpl-ivory .hero { background: var(--paper); }
-.tpl-ivory .hero::before, .tpl-ivory .hero::after { content: ""; position: absolute; z-index: 1; top: 0; bottom: 0; width: 44px; pointer-events: none; opacity: .9;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='96'%3E%3Cpath d='M22 0C8 24 36 48 22 96' stroke='%236f8f72' stroke-width='2' fill='none'/%3E%3Ccircle cx='13' cy='26' r='6' fill='%23d88a96'/%3E%3Cellipse cx='32' cy='52' rx='8' ry='4' fill='%238fb08f' transform='rotate(30 32 52)'/%3E%3Ccircle cx='30' cy='78' r='5' fill='%23e8b4bc'/%3E%3Cellipse cx='11' cy='64' rx='7' ry='3.5' fill='%238fb08f' transform='rotate(-30 11 64)'/%3E%3C/svg%3E") 0 0/44px 96px repeat-y; }
-.tpl-ivory .hero::before { left: 6px; }
-.tpl-ivory .hero::after { right: 6px; transform: scaleX(-1); }
-.tpl-ivory .hero-body { padding-inline: 56px; }
-.tpl-ivory .hero-mono { display: grid; place-items: center; width: 96px; height: 96px; border: 2px solid var(--saffron); border-radius: 50%; font-size: 1.9rem; color: var(--maroon); box-shadow: 0 0 0 6px var(--paper), 0 0 0 7px color-mix(in srgb, var(--saffron) 60%, transparent); margin-bottom: 14px; white-space: nowrap; }
-.tpl-ivory .hero-title { font-style: italic; font-size: clamp(2rem, 8.5vw, 3.2rem); }
-.tpl-ivory .hero-hosts { font-size: 1.4rem; }
-.tpl-ivory .hero-date-day { color: var(--saffron); }
-.tpl-ivory .event-card { border-radius: 18px; background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
-.tpl-ivory .count-cell { background: #fff; border-color: color-mix(in srgb, var(--saffron) 50%, transparent); }
 
 /* ---------- Invite opener (envelope animation) ---------- */
 .opener-stage { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;

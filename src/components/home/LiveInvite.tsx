@@ -5,14 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import LottieBg from "@/components/invite/LottieBg";
 import { templateFontClass } from "@/lib/template-fonts";
-import { TEMPLATE_DEFS, type TemplateId } from "@/lib/templates";
+import { templateOf } from "@/lib/templates";
 
-// A real, miniature template hero inside a phone. It re-renders instantly as the visitor picks a celebration.
-export default function LiveInvite({ template, kicker, title, hosts, button }: {
-  template: TemplateId; kicker: string; title: string; hosts: string; button: string;
+// A real, miniature invite hero inside a phone. It re-renders instantly as the visitor picks a celebration.
+export default function LiveInvite({ occasion, kicker, title, hosts, button }: {
+  occasion: string; kicker: string; title: string; hosts: string; button: string;
 }) {
   const locale = useLocale();
-  const def = TEMPLATE_DEFS[template];
+  const def = templateOf();
   const c = def.colors;
   const [date, setDate] = useState<{ day: string; rest: string; time: string } | null>(null);
   const tilt = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ export default function LiveInvite({ template, kicker, title, hosts, button }: {
       </div>
       <div ref={tilt} className="live-phone env-phone">
         <div className="live-screen">
-          <div key={template} style={style} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} mini live-swap`}>
+          <div key={occasion} style={style} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} mini live-swap`}>
             <header className="hero">
               <LottieBg name={def.lottie ?? "gold-sparkles"} />
               <div className="hero-body">

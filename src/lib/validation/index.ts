@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { richSchema } from "@/lib/rich";
-import { DEFAULT_TEMPLATE, TEMPLATES } from "@/lib/templates";
+import { DEFAULT_TEMPLATE } from "@/lib/templates";
 import { DEFAULT_THEME, THEMES } from "@/lib/themes";
 
 export const OCCASIONS = [
@@ -30,7 +30,7 @@ export const createEventSchema = z.object({
   message: trimmed(600).optional(),
   rich: richSchema.optional(),
   theme: z.enum(THEMES).default(DEFAULT_THEME),
-  template: z.enum(TEMPLATES).default(DEFAULT_TEMPLATE),
+  template: z.string().max(40).default(DEFAULT_TEMPLATE),
   language: z.enum(LANGUAGES).default("en"),
   photoPath: z
     .string()
@@ -75,7 +75,7 @@ export const updateEventSchema = z.object({
   mapUrl: z.url().optional(),
   message: trimmed(600).optional(),
   theme: z.enum(THEMES),
-  template: z.enum(TEMPLATES).optional(),
+  template: z.string().max(40).optional(),
   rich: richSchema.optional(),
   photoPath: z
     .string()

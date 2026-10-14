@@ -24,18 +24,21 @@ The page markup (do not change it, only style it). The root element has class "d
   .flow (content below the hero) containing .sec sections: .sec-message (.message), .sec-count (.sec-title, .count-grid, .count-cell, .count-num, .count-label), .sec-story (.story, .story-item, .story-dot, .story-title, .story-when, .story-text), .sec-events (.events, .event-card, .event-date, .event-day, .event-month, .event-name, .event-meta, .event-note, .btn-row, .btn-ghost), .sec-venue (.venue-name, .venue-address), .sec-rsvp
   .sec-title is the heading of each section; .btn-main and .btn-ghost are buttons.
 
+Fonts you may use (already loaded), through the font variables on .design-ai: --fd (headings), --fb (body), --fs (script accents). Set them like  .design-ai { --fd: var(--font-cinzel), serif; --fb: var(--font-jost), sans-serif; --fs: var(--font-script), cursive; }
+Available families: var(--font-cinzel) (regal capitals), var(--font-cormorant) (elegant serif), var(--font-playfair) (classic serif), var(--font-jost) (clean sans), var(--font-fredoka) (round, playful), var(--font-yatra) (devotional), var(--font-script) (handwritten script). Choose the pair that fits the mood.
+
 Colour variables (define them in ONE rule: .design-ai { ... }):
   --paper (page background), --paper-deep (cards, deeper sections), --ink (main text), --ink-soft (secondary text), --maroon (headings, buttons, main accent), --maroon-deep (hover and borders), --saffron (highlight accent).
 
 RULES
 1. Output ONLY CSS. No markdown fences, no explanations, no comments, no HTML.
-2. First rule: .design-ai { the 7 variables as hex or rgba values }. Then style .design-ai itself (background layers) and the classes above.
+2. First rule: .design-ai { the 7 colour variables as hex or rgba values, plus the font variables }. Then style .design-ai itself (background layers) and the classes above.
 3. Every selector must start with .design-ai (for example ".design-ai .hero-title"). Never style body, html, :root or elements outside the invite.
 4. No @import, no @font-face, no url() of any kind, no position: fixed or sticky. Use gradients (linear, radial, conic, repeating) and CSS shapes for texture and ornament. Pseudo-elements (::before, ::after) on .hero and .sec are good for borders, corners, glows and patterns.
 5. MOTION is part of the design. Add 2 to 4 tasteful CSS-only animations that fit the described mood, for example slowly drifting gradient, shimmering gold text on .hero-title, floating soft lights or petals made from pseudo-elements, gently pulsing .btn-main, a soft glow on .count-cell. Name every @keyframes with the prefix "ai-". Keep motion calm (slow, small), and wrap the animations so they switch off in @media (prefers-reduced-motion: reduce).
 6. Text must always be legible against its background. If the description says dark, midnight or noir make a dark theme with light --ink; otherwise use a light theme with a warm or cool tinted dark --ink, never pure black or flat grey.
 7. Use one unified palette across the hero and every section: 2 to 3 dominant colours from the description plus one highlight. The page must feel like one continuous design.
-8. Keep the whole stylesheet under 4500 characters. Only override what matters.
+8. Keep the whole stylesheet under 4500 characters. The base page is plain, so the design should do real work: layout rhythm, hero treatment, ornament and motion, not only colours.
 9. The layout must keep working on a 360px wide phone. Do not set fixed widths larger than 100%.`;
 
 type Msg = { system: string; user: string };

@@ -137,7 +137,7 @@
     "continue": "Continue",
     "stepsLabel": "Steps",
     "step1": "Describe",
-    "step2": "Design",
+    "step2": "Occasion",
     "step3": "Details",
     "save": "Save changes",
     "livePreview": "Live preview",
@@ -319,25 +319,6 @@
     "map": "Open in Google Maps",
     "switchTo": "हिन्दी"
   },
-  "Templates": {
-    "heading": "Choose a look",
-    "intro": "Tap a design to pick it. This is how guests will see your invite.",
-    "classic": "Classic card",
-    "royal": "Royal",
-    "bloom": "Bloom",
-    "griha": "Griha",
-    "pooja": "Pooja",
-    "confetti": "Confetti",
-    "blossom": "Blossom",
-    "night": "Night",
-    "fullPreview": "Full preview",
-    "selected": "Selected",
-    "classicSample": "Simple one-page card",
-    "classicNote": "Quick and light, works on any phone",
-    "jharokha": "Jharokha",
-    "rangeela": "Rangeela",
-    "ivory": "Ivory"
-  },
   "Editor": {
     "heading": "Make it richer (optional)",
     "itinerary": "Events and timings",
@@ -440,7 +421,8 @@
       "placeholder": "Deep green and gold, elegant and traditional, with soft golden sparkles and gently falling marigold petals.",
       "hint": "Optional. Leave empty to keep the template as it is. The AI restyles your chosen template to match your words.",
       "clear": "Remove custom design",
-      "working": "Designing your invite…"
+      "working": "Designing your invite…",
+      "failed": "We could not apply the new design this time, so the previous look is kept. Save again to retry."
     }
   },
   "Card": {

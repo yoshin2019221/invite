@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import type { TemplateId } from "@/lib/templates";
 import LiveInvite from "./LiveInvite";
 
 const CHOICES = [
-  { occ: "wedding", tpl: "royal", icon: "💍" },
-  { occ: "birthday", tpl: "confetti", icon: "🎂" },
-  { occ: "housewarming", tpl: "griha", icon: "🏠" },
-  { occ: "pooja", tpl: "pooja", icon: "🪔" },
-  { occ: "baby", tpl: "blossom", icon: "🍼" },
-  { occ: "party", tpl: "night", icon: "🎉" },
+  { occ: "wedding", icon: "💍" },
+  { occ: "birthday", icon: "🎂" },
+  { occ: "housewarming", icon: "🏠" },
+  { occ: "pooja", icon: "🪔" },
+  { occ: "baby", icon: "🍼" },
+  { occ: "party", icon: "🎉" },
 ] as const;
 
 export default function Hero() {
@@ -94,7 +93,6 @@ export default function Hero() {
       window.localStorage.setItem("gharinvite:draft", JSON.stringify({
         occasion: pick.occ,
         title: live(`titles.${pick.occ}`, { name: shown }),
-        template: pick.tpl as TemplateId,
       }));
     } catch {
       // ignore: the create page works without it
@@ -153,14 +151,13 @@ export default function Hero() {
           <input id="h-name" className="h-input" value={name} maxLength={30} onChange={(e) => setName(e.target.value)} placeholder={live(`names.${pick.occ}`)} />
           <div className="h-actions">
             <button type="button" onClick={go} className="h-cta">{live("cta")}</button>
-            <a href="#designs" className="h-link">{t("ctaSee")}</a>
           </div>
         </div>
       </div>
 
       <div className="h-phones">
         <LiveInvite
-          template={pick.tpl}
+          occasion={pick.occ}
           kicker={occasions(pick.occ)}
           title={live(`titles.${pick.occ}`, { name: shown })}
           hosts={live("hosts")}

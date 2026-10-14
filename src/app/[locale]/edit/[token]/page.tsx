@@ -7,7 +7,6 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { hashToken } from "@/lib/tokens";
 import { formatWhenShort, requestUrl, toLocalInputs } from "@/lib/events";
 import { richOf } from "@/lib/rich";
-import { isTemplate } from "@/lib/templates";
 import { themeOf } from "@/lib/themes";
 import AppBar from "@/components/app/AppBar";
 import AutoRefresh from "./AutoRefresh";
@@ -173,7 +172,6 @@ export default async function EditPage({
           mapUrl: event.map_url ?? "",
           message: event.message ?? "",
           theme: themeOf(event.theme),
-          template: isTemplate(event.template) ? event.template : "classic",
           rich: richOf(event.details),
         }}
         occasion={event.occasion}

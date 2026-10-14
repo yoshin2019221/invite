@@ -6,11 +6,10 @@ import Link from "next/link";
 import { OCCASIONS } from "@/lib/validation";
 import { compressImage } from "@/lib/image";
 import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
-import TemplatePicker from "@/components/invite/TemplatePicker";
 import LivePreview from "@/components/invite/LivePreview";
 import { EMPTY_RICH, type Rich } from "@/lib/rich";
-import { DEFAULT_TEMPLATE, TEMPLATE_DEFS, isTemplate, templatesFor, type TemplateId } from "@/lib/templates";
-import { DEFAULT_THEME, OCCASION_THEME, THEMES, THEME_COLORS, type ThemeId } from "@/lib/themes";
+import { DEFAULT_TEMPLATE } from "@/lib/templates";
+import { DEFAULT_THEME, OCCASION_THEME, type ThemeId } from "@/lib/themes";
 
 type Occasion = (typeof OCCASIONS)[number];
 
@@ -25,7 +24,6 @@ type Draft = {
   mapUrl: string;
   message: string;
   theme: ThemeId;
-  template: TemplateId;
   rich: Rich;
 };
 
@@ -40,7 +38,6 @@ const EMPTY: Draft = {
   mapUrl: "",
   message: "",
   theme: DEFAULT_THEME,
-  template: DEFAULT_TEMPLATE,
   rich: EMPTY_RICH,
 };
 
@@ -54,15 +51,13 @@ export default function CreateFlow() {
   const t = useTranslations("Create");
   const occasions = useTranslations("Occasions");
   const created = useTranslations("Created");
-  const themes = useTranslations("Themes");
-  const tpl = useTranslations("Templates");
   const ed = useTranslations("Editor");
   const ai = useTranslations("Describe");
   const locale = useLocale() as "en" | "hi";
 
   const [loaded, setLoaded] = useState(false);
   const [restored, setRestored] = useState(false);
-  const [step, setStep] = useState<"describe" | "ask" | "occasion" | "template" | "details" | "done">("describe");
+  const [step, setStep] = useState<"describe" | "ask" | "occasion" | "details" | "done">("describe");
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -149,22 +144,14 @@ export default function CreateFlow() {
   // One-time restore of an unfinished draft, or a design/occasion/prompt chosen on the home page.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    // A choice made on the home page (e.g. /create?template=royal, ?occasion=wedding, ?desc=...) wins over a saved draft.
+    // A choice made on the home page (e.g. /create?occasion=wedding or ?desc=...) wins over a saved draft.
     const q = new URLSearchParams(window.location.search);
-    const qTemplate = q.get("template");
     const qOccasion = q.get("occasion");
     const qDesc = q.get("desc");
-    if (qTemplate && isTemplate(qTemplate)) {
-      const occ = TEMPLATE_DEFS[qTemplate].occasions[0] as Occasion;
-      setDraft((d) => ({ ...d, template: qTemplate, occasion: occ, theme: OCCASION_THEME[occ] ?? d.theme }));
-      setStep("details");
-      setLoaded(true);
-      return;
-    }
     if (qOccasion && OCCASIONS.includes(qOccasion as (typeof OCCASIONS)[number])) {
       const occ = qOccasion as Occasion;
-      setDraft((d) => ({ ...d, occasion: occ, template: templatesFor(occ)[1] ?? DEFAULT_TEMPLATE, theme: OCCASION_THEME[occ] ?? d.theme }));
-      setStep("template");
+      setDraft((d) => ({ ...d, occasion: occ, theme: OCCASION_THEME[occ] ?? d.theme }));
+      setStep("details");
       setLoaded(true);
       return;
     }
@@ -233,7 +220,7 @@ export default function CreateFlow() {
     setMessage(null);
     // Custom design: only when the host described a look. The AI writes CSS (colours, textures, animation) for the template.
     let inviteCSS: string | undefined;
-    const designPrompt = TEMPLATE_DEFS[draft.template].rich ? brief.trim() || undefined : undefined;
+    const designPrompt = brief.trim() || undefined;
     setDesignFailed(false);
     if (designPrompt && designPrompt.length >= 10) {
       setDesignBusy(true);
@@ -265,8 +252,8 @@ export default function CreateFlow() {
       message: draft.message.trim() || undefined,
       language: locale,
       theme: draft.theme,
-      template: draft.template,
-      rich: TEMPLATE_DEFS[draft.template].rich ? { ...draft.rich, heroFullCard: false, designPrompt, inviteCSS } : undefined,
+      template: DEFAULT_TEMPLATE,
+      rich: { ...draft.rich, heroFullCard: false, designPrompt, inviteCSS },
     };
     try {
       if (result) {
@@ -345,14 +332,13 @@ export default function CreateFlow() {
       const { draft: d, questions: qs } = (await res.json()) as {
         draft: {
           occasion: Occasion | null; title: string | null; hostNames: string | null; date: string | null; time: string | null;
-          venueName: string | null; address: string | null; message: string | null; templateId: TemplateId | null; designPrompt: string | null; styleStated: boolean;
+          venueName: string | null; address: string | null; message: string | null; designPrompt: string | null; styleStated: boolean;
           itinerary: { name: string; date: string | null; time: string | null; venue: string | null; note: string | null }[];
           story: { title: string; when: string | null; text: string | null }[];
         };
         questions: string[];
       };
       const occ = d.occasion;
-      const tplId = d.templateId ?? (occ ? templatesFor(occ)[1] : null) ?? DEFAULT_TEMPLATE;
       setDraft((cur) => ({
         ...cur,
         occasion: occ ?? cur.occasion,
@@ -364,7 +350,6 @@ export default function CreateFlow() {
         address: d.address ?? cur.address,
         message: d.message ?? cur.message,
         theme: occ ? (OCCASION_THEME[occ] ?? cur.theme) : cur.theme,
-        template: tplId,
         rich: {
           ...cur.rich,
           itinerary: d.itinerary.map((e) => ({
@@ -401,7 +386,7 @@ export default function CreateFlow() {
 
   if (!loaded) return null;
 
-  const stepNo = step === "describe" || step === "ask" ? 1 : step === "occasion" || step === "template" ? 2 : step === "details" ? 3 : 0;
+  const stepNo = step === "describe" || step === "ask" ? 1 : step === "occasion" ? 2 : step === "details" ? 3 : 0;
   const stepsBar = stepNo ? (
     <ol className="app-steps" aria-label={t("stepsLabel")}>
       {[t("step1"), t("step2"), t("step3")].map((name, n) => (
@@ -558,7 +543,7 @@ export default function CreateFlow() {
             <div className="grid grid-cols-2 gap-3">
               {OCCASIONS.map((o) => (
                 <button key={o} type="button" aria-pressed={draft.occasion === o}
-                  onClick={() => { update("occasion", o); update("theme", OCCASION_THEME[o] ?? DEFAULT_THEME); if (q.has("style")) update("template", templatesFor(o)[1] ?? DEFAULT_TEMPLATE); }}
+                  onClick={() => { update("occasion", o); update("theme", OCCASION_THEME[o] ?? DEFAULT_THEME); }}
                   className={`rounded-xl border-2 px-3 py-4 text-xl font-medium active:scale-95 ${draft.occasion === o ? "border-maroon bg-maroon text-paper" : "border-maroon/25 bg-white/70 text-maroon"}`}>
                   {occasions(o)}
                 </button>
@@ -582,12 +567,6 @@ export default function CreateFlow() {
               <input id="q-time" type="time" className={inputClass} value={draft.time} onChange={(e) => update("time", e.target.value)} /></div>)}
           </div>
         )}
-        {q.has("style") && (
-          <div className="flex flex-col gap-3">
-            <p className={lab}>{ai("qStyle")}</p>
-            <TemplatePicker occasion={occ} value={draft.template} onChange={(id) => update("template", id)} />
-          </div>
-        )}
         <button type="button" disabled={!ready} onClick={() => setStep("details")} className="sticky bottom-4 rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper shadow-lg active:scale-95 disabled:opacity-50">
           {t("continue")}
         </button>
@@ -609,8 +588,7 @@ export default function CreateFlow() {
               onClick={() => {
                 update("occasion", o);
                 update("theme", OCCASION_THEME[o] ?? DEFAULT_THEME);
-                update("template", templatesFor(o)[1] ?? DEFAULT_TEMPLATE);
-                setStep("template");
+                setStep("details");
               }}
               className={`min-h-28 rounded-xl border-2 px-4 py-6 text-2xl font-medium transition-transform active:scale-95 ${
                 draft.occasion === o
@@ -627,26 +605,6 @@ export default function CreateFlow() {
   }
 
   const occasion = draft.occasion ?? "party";
-  const isRich = TEMPLATE_DEFS[draft.template].rich;
-
-  if (step === "template") {
-    return (
-      <div className="flex flex-col gap-6">
-        {stepsBar}
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="font-display text-4xl text-maroon">{tpl("heading")}</h1>
-          <button type="button" onClick={() => setStep("occasion")} className="rounded-md border border-maroon/30 px-4 py-2 text-base text-maroon">
-            {t("back")}
-          </button>
-        </div>
-        <p className="text-lg text-ink-soft">{tpl("intro")}</p>
-        <TemplatePicker occasion={occasion} value={draft.template} onChange={(id) => update("template", id)} />
-        <button type="button" onClick={() => setStep("details")} className="sticky bottom-4 rounded-lg bg-maroon px-8 py-5 text-xl font-semibold text-paper shadow-lg active:scale-95">
-          {t("continue")}
-        </button>
-      </div>
-    );
-  }
 
   const label = "mb-2 block text-lg font-medium";
   const err = (bad: boolean) => (showErrors && bad ? true : undefined);
@@ -665,7 +623,7 @@ export default function CreateFlow() {
         <h1 className="font-display text-4xl text-maroon">{t("detailsHeading")}</h1>
         <button
           type="button"
-          onClick={() => setStep("template")}
+          onClick={() => setStep("occasion")}
           className="rounded-md border border-maroon/30 px-4 py-2 text-base text-maroon"
         >
           {occasions(occasion)} · {t("back")}
@@ -773,36 +731,7 @@ export default function CreateFlow() {
         />
       </div>
 
-      {!isRich && (
-      <fieldset>
-        <legend className={label}>{t("themeHeading")}</legend>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {THEMES.map((id) => {
-            const c = THEME_COLORS[id];
-            const on = draft.theme === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={on}
-                onClick={() => update("theme", id)}
-                style={{ backgroundColor: c.paper, borderColor: on ? c.accent : "transparent", color: c.accent }}
-                className={`flex flex-col items-center gap-2 rounded-xl border-4 px-3 py-4 text-lg font-semibold shadow-sm active:scale-95 ${on ? "" : "outline outline-1 outline-black/15"}`}
-              >
-                <span className="flex gap-1.5" aria-hidden>
-                  <span className="h-6 w-6 rounded-full" style={{ backgroundColor: c.accent }} />
-                  <span className="h-6 w-6 rounded-full" style={{ backgroundColor: c.highlight }} />
-                </span>
-                {themes(id)}
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
-      )}
-
-      {isRich && (
-        <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
+      <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
           <p className="text-lg font-medium">{ai("design.heading")}</p>
           <label htmlFor="brief" className="text-base text-ink-soft">{ai("design.label")}</label>
           <textarea id="brief" rows={5} maxLength={1800} className={inputClass} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder={ai("design.placeholder")} />
@@ -811,12 +740,10 @@ export default function CreateFlow() {
             <button type="button" onClick={() => setBrief("")} className="self-start text-base text-maroon underline">{ai("design.clear")}</button>
           )}
         </div>
-      )}
 
-      {isRich && (
-        <LivePreview
+      <LivePreview
           locale={locale}
-          template={draft.template}
+          template={DEFAULT_TEMPLATE}
           title={draft.title}
           hosts={draft.hostNames}
           date={draft.date}
@@ -824,14 +751,11 @@ export default function CreateFlow() {
           venue={draft.venueName}
           message={draft.message}
         />
-      )}
 
-      {isRich && (
-        <div className="flex flex-col gap-4">
-          <h2 className="font-display text-3xl text-maroon">{ed("heading")}</h2>
-          <RichSectionsEditor value={draft.rich} onChange={(r) => update("rich", r)} />
-        </div>
-      )}
+      <div className="flex flex-col gap-4">
+        <h2 className="font-display text-3xl text-maroon">{ed("heading")}</h2>
+        <RichSectionsEditor value={draft.rich} onChange={(r) => update("rich", r)} />
+      </div>
 
       {message && (
         <p role="alert" className="text-lg font-medium text-red-800">

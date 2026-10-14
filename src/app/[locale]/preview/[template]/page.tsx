@@ -4,7 +4,6 @@ import { setRequestLocale } from "next-intl/server";
 import RichInvite from "@/components/invite/RichInvite";
 import { isLocale } from "@/i18n/routing";
 import { sampleEvent } from "@/lib/sample";
-import { isTemplate, TEMPLATE_DEFS } from "@/lib/templates";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -17,11 +16,11 @@ const one = (v: string | string[] | undefined, max: number) => {
 };
 
 export default async function PreviewPage({ params, searchParams }: { params: Promise<Params>; searchParams: Promise<Search> }) {
-  const { locale, template } = await params;
-  if (!isLocale(locale) || !isTemplate(template) || !TEMPLATE_DEFS[template].rich) notFound();
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
   const q = await searchParams;
-  const { event } = sampleEvent(template, locale);
+  const { event } = sampleEvent(locale);
 
   // Live preview: the host's own details replace the sample ones as they type.
   const live = q.live === "1";
@@ -50,8 +49,8 @@ export default async function PreviewPage({ params, searchParams }: { params: Pr
     <RichInvite
       event={event}
       locale={locale}
-      inviteUrl={`/${locale}/preview/${template}`}
-      otherLocalePath={`/${locale === "en" ? "hi" : "en"}/preview/${template}`}
+      inviteUrl={`/${locale}/preview/default`}
+      otherLocalePath={`/${locale === "en" ? "hi" : "en"}/preview/default`}
       preview
     />
   );

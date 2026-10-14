@@ -1,6 +1,6 @@
 import localFont from "next/font/local";
 
-// Fonts for the rich templates. Imported only by the rich invite route, so the classic pages don't pay for them.
+// Fonts available to invites. A custom design picks among them through the --fd, --fb and --fs variables.
 export const cinzel = localFont({
   src: [
     { path: "../../node_modules/@fontsource/cinzel/files/cinzel-latin-400-normal.woff2", weight: "400" },
