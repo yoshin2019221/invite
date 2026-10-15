@@ -48,7 +48,8 @@ export function sanitizeDesignHtml(input: string): string {
   s = s.replace(/\s(srcdoc|target)\s*=\s*("|')[^"']*\2/gi, "");
   // CSS: no @import, no url() except inline data images.
   s = s.replace(/@import\s[^;]+;?/gi, "");
-  s = s.replace(/url\s*\(\s*(["']?)(?!data:image\/)[^)]*\)/gi, "none");
+  // url(#id) points at gradients, masks and filters inside the same document, so it stays.
+  s = s.replace(/url\s*\(\s*(["']?)(?!data:image\/|#)[^)]*\)/gi, "none");
   s = s.replace(/image-set\s*\([^)]*\)/gi, "none");
   s = s.replace(/expression\s*\([^)]*\)/gi, "");
   s = s.replace(/javascript\s*:/gi, "");
@@ -147,7 +148,8 @@ function tick(){if(!I.iso)return;var s=Math.max(0,Math.floor((new Date(I.iso)-Da
 document.querySelectorAll("[data-countdown]").forEach(function(e){var k=e.getAttribute("data-countdown");if(k in v)e.textContent=k==="days"?String(v[k]):p(v[k])})}
 tick();setInterval(tick,1000);
 document.querySelectorAll("[data-rsvp]").forEach(function(e){e.addEventListener("click",function(x){x.preventDefault();parent.postMessage({type:"invite-rsvp"},"*")})});
-function h(){parent.postMessage({type:"invite-height",h:Math.ceil(document.body.getBoundingClientRect().bottom+(window.scrollY||0))},"*")}
+function h(){parent.postMessage({type:"invite-height",locked:document.documentElement.classList.contains("lock"),h:Math.ceil(document.body.getBoundingClientRect().bottom+(window.scrollY||0))},"*")}
+if(window.MutationObserver)new MutationObserver(h).observe(document.documentElement,{attributes:true,attributeFilter:["class"]});
 if(window.ResizeObserver)new ResizeObserver(h).observe(document.documentElement);addEventListener("load",h);h();[300,1200,3000].forEach(function(t){setTimeout(h,t)});
 addEventListener("message",function(e){var d=e.data;if(!d)return;if(d.type==="invite-vh"&&d.v>0){document.documentElement.style.setProperty("--vh",d.v+"px");h()}if(d.type==="invite-ping")h()});})();`;
 
