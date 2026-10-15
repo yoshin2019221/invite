@@ -420,14 +420,14 @@
       "heading": "Custom design",
       "label": "Describe the look you want. Colours, mood, decorations, and any motion such as falling petals or shimmering gold.",
       "placeholder": "Deep green and gold, elegant and traditional, with soft golden sparkles and gently falling marigold petals.",
-      "hint": "Optional. Leave empty to keep the template as it is. The AI restyles your chosen template to match your words.",
+      "hint": "Optional. Edit the description of the look, then tap the button. The AI designs a new page from your words.",
       "clear": "Remove custom design",
       "working": "Designing your invite…",
       "failed": "We could not apply the new design this time, so the previous look is kept. Save again to retry.",
       "createFailed": "The AI could not finish your design this time, so nothing was created. Tap \"Design it with AI\" to try again.",
       "generate": "Design it with AI",
       "regenerate": "Design again",
-      "wait": "The AI is designing your invite. This can take up to a minute."
+      "wait": "The AI is designing your invite. This can take up to two minutes. Please keep this page open."
     }
   },
   "Card": {

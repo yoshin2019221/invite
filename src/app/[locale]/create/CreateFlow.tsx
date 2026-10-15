@@ -216,6 +216,12 @@ export default function CreateFlow() {
   const hasMissing = Object.values(missing).some(Boolean);
 
   // Writes the HTML invite from the brief. Returns the page, or null after showing the reason.
+  // A design error is shown in the design box AND next to the Create button, so it is never off-screen.
+  function fail(text: string) {
+    setDesignError(text);
+    setMessage(text);
+  }
+
   async function generateDesign(): Promise<string | null> {
     const b = brief.trim();
     if (b.length < 10 || !draft.occasion) return null;
@@ -226,14 +232,15 @@ export default function CreateFlow() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ designPrompt: b, occasion: draft.occasion, language: locale }),
+        signal: AbortSignal.timeout(295_000),
       });
-      if (r.status === 429) { setDesignError(ai("errors.busy")); return null; }
+      if (r.status === 429) { fail(ai("errors.busy")); return null; }
       const d = r.ok ? ((await r.json()) as { html?: string }) : null;
-      if (!d?.html) { setDesignError(ai("design.createFailed")); return null; }
+      if (!d?.html) { fail(ai("design.createFailed")); return null; }
       setDraft((cur) => ({ ...cur, designHtml: d.html ?? null, designBrief: b }));
       return d.html;
     } catch {
-      setDesignError(ai("design.createFailed"));
+      fail(ai("design.createFailed"));
       return null;
     } finally {
       setDesignBusy(false);
