@@ -137,6 +137,23 @@ type Image = { mediaType: "image/jpeg" | "image/png" | "image/webp"; data: strin
 
 export class AiUnavailable extends Error {}
 
+// Newer models sometimes double-encode the tool arguments, wrap them in one extra key, or answer in plain text.
+function coerceInput(v: unknown): unknown {
+  let x: unknown = v;
+  for (let i = 0; i < 3 && typeof x === "string"; i++) {
+    const t = x.trim();
+    const m = t.match(/\{[\s\S]*\}/); // also handles ```json fences and a sentence around the object
+    try { x = JSON.parse(m && !t.startsWith("{") && !t.startsWith('"') ? m[0] : t); } catch { return null; }
+  }
+  if (Array.isArray(x)) x = x[0];
+  if (x && typeof x === "object") {
+    const o = x as Record<string, unknown>;
+    const keys = Object.keys(o);
+    if (keys.length === 1 && o[keys[0]] && typeof o[keys[0]] === "object" && !Array.isArray(o[keys[0]])) x = o[keys[0]];
+  }
+  return x && typeof x === "object" ? x : null;
+}
+
 export async function extractInvite(text: string, image?: Image): Promise<Extracted> {
   // Anthropic first; if only an OpenAI key is set, use that instead. One of the two is enough.
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
@@ -146,12 +163,17 @@ export async function extractInvite(text: string, image?: Image): Promise<Extrac
   const prompt = `Today (India): ${today}\n\nHost's description:\n${text || "(none, see the sample image)"}${image ? "\n\nThe attached image is a sample invite whose look they like. Use it for style, and read any details printed on it." : ""}`;
   const call = () => (anthropicKey ? viaAnthropic(anthropicKey, prompt, image) : viaOpenAI(openaiKey as string, prompt, image));
   // The model occasionally returns no tool call; retry once before giving up.
-  let input = await call();
-  if (input == null) input = await call();
+  let input = coerceInput(await call());
+  if (input == null) input = coerceInput(await call());
   if (input == null) throw new Error("no_tool_call");
   // The schema is lenient and always parses, but guard just in case.
-  const parsed = extractedSchema.safeParse(input);
-  if (!parsed.success) throw new Error("bad model output");
+  // Newer models leave out fields they have nothing for (e.g. itinerary, story); a missing key must not fail the parse.
+  const filled = { ...Object.fromEntries(Object.keys(extractedSchema.shape).map((k) => [k, null])), ...(input as Record<string, unknown>) };
+  const parsed = extractedSchema.safeParse(filled);
+  if (!parsed.success) {
+    console.error("ai-draft bad model output", JSON.stringify(input).slice(0, 400), parsed.error.issues.slice(0, 3));
+    throw new Error("bad model output");
+  }
   return parsed.data;
 }
 
@@ -189,7 +211,9 @@ async function viaOpenAI(key: string, prompt: string, image?: Image): Promise<un
     },
     { effort: process.env.OPENAI_TEXT_EFFORT || "low", timeoutMs: 40_000 },
   );
-  const args = body.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) throw new Error("openai_no_tool_call");
-  return JSON.parse(args);
+  const msg = body.choices?.[0]?.message;
+  const raw = msg?.tool_calls?.[0]?.function?.arguments ?? msg?.content;
+  if (!raw) throw new Error("openai_no_tool_call");
+  if (typeof raw === "string" && !msg?.tool_calls?.length) console.error("openai text answered without a tool call", raw.slice(0, 200));
+  return raw;
 }
