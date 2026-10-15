@@ -161,6 +161,7 @@ export function buildSrcDoc(storedHtml: string, v: DesignVars, lang: string): st
   return `<!doctype html><html lang="${lang === "hi" ? "hi" : "en"}"><head><meta charset="utf-8">` +
     `<meta name="viewport" content="width=device-width,initial-scale=1">` +
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">` +
-    `<style>html,body{margin:0;padding:0}*{box-sizing:border-box}</style></head><body>${body}` +
+    `<style>html,body{margin:0;padding:0}*{box-sizing:border-box}</style></head><body><div id="invite-root">${body}</div>` +
+    `<style>html{overflow-x:hidden!important;height:auto!important}body{display:block!important;height:auto!important;max-width:100vw;overflow-x:hidden!important}#invite-root{display:block;width:100%;max-width:100vw;overflow-x:hidden}</style>` +
     `<script>window.INVITE=${safeJson(v)};</script><script>${RUNTIME}</script></body></html>`;
 }
