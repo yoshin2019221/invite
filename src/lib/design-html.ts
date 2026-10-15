@@ -140,16 +140,16 @@ const CSP = [
 ].join("; ");
 
 // Our own, trusted runtime inside the frame: data-if, data-countdown, data-rsvp and height reporting.
-const RUNTIME = `(function(){var I=window.INVITE;document.body.setAttribute("data-start",I.iso);
+const RUNTIME = `(function(){var I=window.INVITE;document.documentElement.style.setProperty("--vh",Math.max(5,Math.min(innerHeight||700,900)/100)+"px");document.body.setAttribute("data-start",I.iso);
 document.querySelectorAll("[data-if]").forEach(function(e){if(!I[e.getAttribute("data-if")])e.remove()});
 function p(n){return n<10?"0"+n:""+n}
 function tick(){if(!I.iso)return;var s=Math.max(0,Math.floor((new Date(I.iso)-Date.now())/1000));var v={days:Math.floor(s/86400),hours:Math.floor(s%86400/3600),minutes:Math.floor(s%3600/60),seconds:s%60};
 document.querySelectorAll("[data-countdown]").forEach(function(e){var k=e.getAttribute("data-countdown");if(k in v)e.textContent=k==="days"?String(v[k]):p(v[k])})}
 tick();setInterval(tick,1000);
 document.querySelectorAll("[data-rsvp]").forEach(function(e){e.addEventListener("click",function(x){x.preventDefault();parent.postMessage({type:"invite-rsvp"},"*")})});
-function h(){parent.postMessage({type:"invite-height",h:Math.ceil(document.documentElement.scrollHeight)},"*")}
+function h(){parent.postMessage({type:"invite-height",h:Math.ceil(document.body.getBoundingClientRect().bottom+(window.scrollY||0))},"*")}
 if(window.ResizeObserver)new ResizeObserver(h).observe(document.documentElement);addEventListener("load",h);h();[300,1200,3000].forEach(function(t){setTimeout(h,t)});
-addEventListener("message",function(e){if(e.data&&e.data.type==="invite-ping")h()});})();`;
+addEventListener("message",function(e){var d=e.data;if(!d)return;if(d.type==="invite-vh"&&d.v>0){document.documentElement.style.setProperty("--vh",d.v+"px");h()}if(d.type==="invite-ping")h()});})();`;
 
 export function fillPlaceholders(html: string, v: DesignVars): string {
   return html.replace(/\{\{\s*([a-z]+)\s*\}\}/gi, (_m, k: string) => esc((v as Record<string, string>)[k.toLowerCase()] ?? ""));
@@ -157,7 +157,10 @@ export function fillPlaceholders(html: string, v: DesignVars): string {
 
 // The complete document that goes into the sandboxed iframe's srcdoc.
 export function buildSrcDoc(storedHtml: string, v: DesignVars, lang: string): string {
-  const body = fillPlaceholders(sanitizeDesignHtml(storedHtml), v);
+  // vh units inside a frame that grows to fit its content feed back on themselves (the page keeps getting
+  // taller). Every vh becomes a multiple of --vh, which the runtime sets once to a fixed value.
+  const body = fillPlaceholders(sanitizeDesignHtml(storedHtml), v)
+    .replace(/(-?\d*\.?\d+)\s*(?:d|s|l)?vh\b/gi, (_m, n: string) => `calc(${n} * var(--vh, 7px))`);
   return `<!doctype html><html lang="${lang === "hi" ? "hi" : "en"}"><head><meta charset="utf-8">` +
     `<meta name="viewport" content="width=device-width,initial-scale=1">` +
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">` +

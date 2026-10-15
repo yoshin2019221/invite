@@ -20,14 +20,18 @@ export default function DesignFrame({ html, vars, lang, title, fixedHeight }: {
     function onMsg(e: MessageEvent) {
       if (e.source !== ref.current?.contentWindow) return;
       const d = e.data as { type?: string; h?: number } | null;
-      if (d?.type === "invite-height" && typeof d.h === "number" && d.h > 200 && d.h < 20000) setH(d.h);
+      if (d?.type === "invite-height") {
+        // Tell the page how tall one "vh" really is (screen height, or the fixed preview height).
+        ref.current?.contentWindow?.postMessage({ type: "invite-vh", v: (fixedHeight ?? window.innerHeight) / 100 }, "*");
+        if (typeof d.h === "number" && d.h > 200 && d.h < 20000) setH(d.h);
+      }
       if (d?.type === "invite-rsvp") document.getElementById("rsvp")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     window.addEventListener("message", onMsg);
     // The frame may have loaded (and reported its height) before this listener existed: ask again.
     ref.current?.contentWindow?.postMessage({ type: "invite-ping" }, "*");
     return () => window.removeEventListener("message", onMsg);
-  }, []);
+  }, [fixedHeight]);
 
   return (
     <iframe
