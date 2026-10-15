@@ -56,14 +56,8 @@ export default function HomePage({ params }: { params: Promise<{ locale: string 
         <RsvpDemo />
       </section>
 
-      <section className="h-final">
-        <h2 className="h-h2">{t("finalHeading")}</h2>
-        <Link href={`/${locale}/create`} className="h-cta">{t("finalCta")}</Link>
-      </section>
-
       <footer className="h-foot">
         <span>{brand("name")}</span>
-        <Link href={`/${locale}/privacy`}>{t("privacy")}</Link>
       </footer>
     </div>
   );
