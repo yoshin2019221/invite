@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import LiveInvite from "./LiveInvite";
 
 export default function Hero() {
@@ -10,7 +11,14 @@ export default function Hero() {
   const occasions = useTranslations("Occasions");
   const ai = useTranslations("Home.ai");
   const [prompt, setPrompt] = useState("");
-  const [soon, setSoon] = useState(false);
+  const locale = useLocale();
+  const router = useRouter();
+
+  // The create page runs the AI on these words straight away.
+  function go() {
+    const text = prompt.trim();
+    router.push(text ? `/${locale}/create?desc=${encodeURIComponent(text)}&go=1` : `/${locale}/create`);
+  }
 
   return (
     <div className="h-hero-grid">
@@ -26,12 +34,11 @@ export default function Hero() {
             rows={4}
             maxLength={4000}
             value={prompt}
-            onChange={(e) => { setPrompt(e.target.value); setSoon(false); }}
+            onChange={(e) => setPrompt(e.target.value)}
             placeholder={ai("placeholder")}
           />
           <p className="h-ai-note">{ai("note")}</p>
-          <button type="button" onClick={() => setSoon(true)} className="h-cta h-cta-ai">{ai("cta")}</button>
-          {soon && <p role="status" className="h-ai-hint">{ai("soon")}</p>}
+          <button type="button" onClick={go} className="h-cta h-cta-ai">{ai("cta")}</button>
         </div>
       </div>
 

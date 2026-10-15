@@ -58,6 +58,7 @@ export default function HomePage({ params }: { params: Promise<{ locale: string 
 
       <footer className="h-foot">
         <span>{brand("name")}</span>
+        <Link href={`/${locale}/privacy`}>{t("privacy")}</Link>
       </footer>
     </div>
   );
