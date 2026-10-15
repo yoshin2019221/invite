@@ -422,7 +422,11 @@
       "hint": "Optional. Leave empty to keep the template as it is. The AI restyles your chosen template to match your words.",
       "clear": "Remove custom design",
       "working": "Designing your invite…",
-      "failed": "We could not apply the new design this time, so the previous look is kept. Save again to retry."
+      "failed": "We could not apply the new design this time, so the previous look is kept. Save again to retry.",
+      "createFailed": "The AI could not finish your design this time, so nothing was created. Tap \"Design it with AI\" to try again.",
+      "generate": "Design it with AI",
+      "regenerate": "Design again",
+      "wait": "The AI is designing your invite. This can take up to a minute."
     }
   },
   "Card": {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
 import type { Rich } from "@/lib/rich";
 import type { ThemeId } from "@/lib/themes";
@@ -29,6 +29,7 @@ export default function EditForm({ token, initial, occasion }: { token: string; 
   const ai = useTranslations("Describe");
   const ed = useTranslations("Editor");
   const router = useRouter();
+  const locale = useLocale();
   const [v, setV] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState<"idle" | "saved" | "error" | "required">("idle");
@@ -48,22 +49,23 @@ export default function EditForm({ token, initial, occasion }: { token: string; 
     setBusy(true);
     setDesignFailed(false);
     try {
-      // Custom design: empty text removes it; new or changed text asks the AI for fresh CSS.
+      // AI design: empty text removes it (the base look comes back). New or changed text asks the AI
+      // for a fresh page; if that fails the previous design is kept and the other changes still save.
       let rich = v.rich;
       const b = brief.trim();
       if (!b) {
-        rich = { ...rich, designPrompt: undefined, inviteCSS: undefined };
-      } else if (b !== (rich.designPrompt ?? "") || !rich.inviteCSS) {
-        let css: string | undefined;
+        rich = { ...rich, designPrompt: undefined, designHtml: undefined, inviteCSS: undefined };
+      } else if (b !== (rich.designPrompt ?? "") || (!rich.designHtml && !rich.inviteCSS)) {
+        let html: string | undefined;
         try {
-          const r = await fetch("/api/v1/ai/invite-css", {
+          const r = await fetch("/api/v1/ai/invite-design", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ designPrompt: b, occasion, title: v.title.trim() }),
+            body: JSON.stringify({ designPrompt: b, occasion, language: locale }),
           });
-          css = r.ok ? ((await r.json()) as { css?: string }).css : undefined;
+          html = r.ok ? ((await r.json()) as { html?: string }).html : undefined;
         } catch { /* keep the old design */ }
-        if (css) rich = { ...rich, designPrompt: b, inviteCSS: css };
+        if (html) rich = { ...rich, designPrompt: b, designHtml: html, inviteCSS: undefined };
         else setDesignFailed(true);
       }
       const res = await fetch(`/api/v1/edit/${token}`, {

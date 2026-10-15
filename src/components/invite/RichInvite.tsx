@@ -11,7 +11,9 @@ import { monogram, richOf } from "@/lib/rich";
 import { photoPublicUrl } from "@/lib/supabase/admin";
 import { templateFontClass } from "@/lib/template-fonts";
 import { templateOf } from "@/lib/templates";
+import { designVars, extractPalette, isDark } from "@/lib/design-html";
 import Countdown from "./Countdown";
+import DesignFrame from "./DesignFrame";
 import InviteOpener from "./InviteOpener";
 import LottieBg from "./LottieBg";
 import MusicButton from "./MusicButton";
@@ -46,7 +48,11 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   const photo = photoPublicUrl(event.photo_path);
   const when = dateParts(event.starts_at, event.timezone, locale);
   const time = formatTimeOnly(event.starts_at, event.timezone, locale);
-  const c = def.colors;
+  // AI-designed invite: the whole top of the page is the AI's own HTML (in a sandboxed frame);
+  // the RSVP, calendar and map below stay ours and take their colours from the design's palette.
+  const dh = rich.designHtml;
+  const c = dh ? extractPalette(dh) : def.colors;
+  const dark = dh ? isDark(c.paper) : def.dark;
   const forward = `https://wa.me/?text=${encodeURIComponent(`${g("forwardText", { title: event.title })}\n${inviteUrl}`)}`;
   const map = mapLink(event);
   const showCountdown = rich.countdown;
@@ -68,9 +74,19 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
   return (
     <>
     {fullCard && !preview && <InviteOpener slug={event.slug} />}
-    <div style={{ ...(hasAiCSS ? {} : style), ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${def.dark ? "tpl-dark" : ""} ${templateFontClass} ${hasAiCSS ? "design-ai" : ""} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
+    <div style={{ ...(hasAiCSS ? {} : style), ...(designCSS?.backgroundCSS ? { background: designCSS.backgroundCSS } : {}) }} className={`tpl tpl-${def.id} ${dark ? "tpl-dark" : ""} ${templateFontClass} ${hasAiCSS ? "design-ai" : ""} ${designCSS?.classes.join(" ") ?? ""}`} data-template={def.id}>
       {aiCSS && <style dangerouslySetInnerHTML={{ __html: `${defaultVars}${aiCSS}` }} />}
-      {fullCard ? (
+      {dh ? (
+        <DesignFrame
+          html={dh}
+          lang={locale}
+          title={event.title}
+          vars={designVars({
+            locale, title: event.title, hosts: event.host_names, occasion: occasions(event.occasion),
+            startsAtIso: event.starts_at, timeZone: event.timezone, venue: event.venue_name, address: event.address, message: event.message,
+          })}
+        />
+      ) : fullCard ? (
         <header className="hero hero-cardfull">
           {/* The card's own colours, blurred, become the backdrop so the frame always blends with it. */}
           <div className="hero-cardfull-bg" style={{ backgroundImage: `url("${photo}")` }} aria-hidden />
@@ -121,13 +137,13 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
       )}
 
       <main id="details" className="flow">
-        {event.message && (
+        {!dh && event.message && (
           <Reveal className="sec sec-message">
             <p className="message">{event.message}</p>
           </Reveal>
         )}
 
-        {showCountdown && (
+        {!dh && showCountdown && (
           <Reveal className="sec sec-count">
             <h2 className="sec-title">{t("countdownHeading")}</h2>
             <Countdown
@@ -159,9 +175,9 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
         )}
 
         <Reveal className="sec sec-events">
-          <h2 className="sec-title">{t("itineraryHeading")}</h2>
+          {(!dh || rich.itinerary.length > 0) && <h2 className="sec-title">{t("itineraryHeading")}</h2>}
           <ul className="events">
-            {(rich.itinerary.length ? rich.itinerary : [{ name: event.title, startsAt: event.starts_at, venue: event.venue_name ?? undefined }]).map((e, i) => {
+            {(rich.itinerary.length ? rich.itinerary : dh ? [] : [{ name: event.title, startsAt: event.starts_at, venue: event.venue_name ?? undefined }]).map((e, i) => {
               const p = e.startsAt ? dateParts(e.startsAt, event.timezone, locale) : null;
               return (
                 <li key={i} className="event-card">
@@ -187,11 +203,11 @@ export default async function RichInvite({ event, locale, inviteUrl, otherLocale
           </div>
         </Reveal>
 
-        {(event.venue_name || event.address) && (
+        {(dh ? !!map : (event.venue_name || event.address)) && (
           <Reveal className="sec sec-venue">
-            <h2 className="sec-title">{t("venueHeading")}</h2>
-            {event.venue_name && <p className="venue-name">{event.venue_name}</p>}
-            {event.address && <p className="venue-address">{event.address}</p>}
+            {!dh && <h2 className="sec-title">{t("venueHeading")}</h2>}
+            {!dh && event.venue_name && <p className="venue-name">{event.venue_name}</p>}
+            {!dh && event.address && <p className="venue-address">{event.address}</p>}
             {map && <a href={map} target="_blank" rel="noreferrer" className="btn-main">{t("map")}</a>}
           </Reveal>
         )}

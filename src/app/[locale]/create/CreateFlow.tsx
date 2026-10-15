@@ -25,6 +25,9 @@ type Draft = {
   message: string;
   theme: ThemeId;
   rich: Rich;
+  // The AI-designed page (HTML with placeholders) and the brief it was made from.
+  designHtml: string | null;
+  designBrief: string;
 };
 
 const EMPTY: Draft = {
@@ -39,6 +42,8 @@ const EMPTY: Draft = {
   message: "",
   theme: DEFAULT_THEME,
   rich: EMPTY_RICH,
+  designHtml: null,
+  designBrief: "",
 };
 
 const DRAFT_KEY = "gharinvite:draft";
@@ -72,7 +77,7 @@ export default function CreateFlow() {
   const sampleRef = useRef<HTMLInputElement>(null);
   const [brief, setBrief] = useState("");
   const [designBusy, setDesignBusy] = useState(false);
-  const [designFailed, setDesignFailed] = useState(false);
+  const [designError, setDesignError] = useState<string | null>(null);
   const [aiNote, setAiNote] = useState<string | null>(null);
   const [micMsg, setMicMsg] = useState<string | null>(null);
 
@@ -210,6 +215,31 @@ export default function CreateFlow() {
   };
   const hasMissing = Object.values(missing).some(Boolean);
 
+  // Writes the HTML invite from the brief. Returns the page, or null after showing the reason.
+  async function generateDesign(): Promise<string | null> {
+    const b = brief.trim();
+    if (b.length < 10 || !draft.occasion) return null;
+    setDesignBusy(true);
+    setDesignError(null);
+    try {
+      const r = await fetch("/api/v1/ai/invite-design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ designPrompt: b, occasion: draft.occasion, language: locale }),
+      });
+      if (r.status === 429) { setDesignError(ai("errors.busy")); return null; }
+      const d = r.ok ? ((await r.json()) as { html?: string }) : null;
+      if (!d?.html) { setDesignError(ai("design.createFailed")); return null; }
+      setDraft((cur) => ({ ...cur, designHtml: d.html ?? null, designBrief: b }));
+      return d.html;
+    } catch {
+      setDesignError(ai("design.createFailed"));
+      return null;
+    } finally {
+      setDesignBusy(false);
+    }
+  }
+
   async function submit() {
     setShowErrors(true);
     if (hasMissing || !draft.occasion) {
@@ -218,26 +248,17 @@ export default function CreateFlow() {
     }
     setBusy(true);
     setMessage(null);
-    // Custom design: only when the host described a look. The AI writes CSS (colours, textures, animation) for the template.
-    let inviteCSS: string | undefined;
+    // AI design: when there is a design brief, the AI must produce the page before anything is created.
+    // There is no silent fallback to the saved base look; on failure the host sees why and can retry.
     const designPrompt = brief.trim() || undefined;
-    setDesignFailed(false);
-    if (designPrompt && designPrompt.length >= 10) {
-      setDesignBusy(true);
-      try {
-        const r = await fetch("/api/v1/ai/invite-css", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ designPrompt, occasion: draft.occasion, title: draft.title.trim() }),
-        });
-        const d = r.ok ? ((await r.json()) as { css?: string }) : null;
-        inviteCSS = d?.css;
-        if (!inviteCSS) setDesignFailed(true);
-      } catch {
-        setDesignFailed(true);
-      } finally {
-        setDesignBusy(false);
+    let designHtml: string | undefined;
+    if (designPrompt) {
+      const have = draft.designHtml && draft.designBrief === designPrompt ? draft.designHtml : await generateDesign();
+      if (!have) {
+        setBusy(false);
+        return;
       }
+      designHtml = have;
     }
 
     const payload = {
@@ -253,7 +274,7 @@ export default function CreateFlow() {
       language: locale,
       theme: draft.theme,
       template: DEFAULT_TEMPLATE,
-      rich: { ...draft.rich, heroFullCard: false, designPrompt, inviteCSS },
+      rich: { ...draft.rich, heroFullCard: false, designPrompt, designHtml, inviteCSS: undefined },
     };
     try {
       if (result) {
@@ -322,11 +343,11 @@ export default function CreateFlow() {
       if (res.status === 429) { setAiMsg(ai("errors.busy")); return; }
       if (res.status === 422) { setAiMsg(ai("errors.notInvite")); return; }
       if (!res.ok) {
-        // Never trap the host: if the AI can't read it, move them on to choose the occasion and keep going.
+        // The host chose to design with AI, so we do not quietly swap in something else: say what happened
+        // and let them retry, or choose the occasion themselves on purpose.
         const info = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
         setAiNote(`${res.status} ${info.error ?? ""}${info.code ? ` ${info.code}` : ""}`.trim());
-        setAiMsg(null);
-        setStep("occasion");
+        setAiMsg(ai("errors.unavailable"));
         return;
       }
       const { draft: d, questions: qs } = (await res.json()) as {
@@ -363,12 +384,13 @@ export default function CreateFlow() {
       }));
       setQuestions(qs);
       setStep(qs.length ? "ask" : "details");
-      // Only treat it as a custom design when the host actually described a look.
-      setBrief(d.styleStated && d.designPrompt ? d.designPrompt : "");
+      // The AI always writes the design brief; the HTML itself is generated from it when the invite is created.
+      const fallbackBrief = `${occ ?? "celebration"} invitation. ${desc.trim()}`.slice(0, 1800);
+      setBrief((d.designPrompt ?? "").trim() || fallbackBrief);
+      setDraft((cur) => ({ ...cur, designHtml: null, designBrief: "" }));
+      setDesignError(null);
     } catch {
-      // Network or other hiccup: let the host carry on by choosing the occasion.
-      setAiMsg(null);
-      setStep("occasion");
+      setAiMsg(ai("errors.unavailable"));
     } finally {
       setThinking(false);
     }
@@ -412,7 +434,6 @@ export default function CreateFlow() {
         <button type="button" onClick={() => setStep("details")} className="self-start rounded-lg border-2 border-maroon px-6 py-3 text-lg font-semibold text-maroon active:scale-95">
           ← {created("editMore")}
         </button>
-        {designFailed && <p role="status" className="text-base text-ink-soft">{created("designFailed")}</p>}
 
         <section className="flex flex-col items-center gap-3">
           <p className="self-start text-lg font-medium">{created("previewHeading")}</p>
@@ -736,14 +757,24 @@ export default function CreateFlow() {
           <label htmlFor="brief" className="text-base text-ink-soft">{ai("design.label")}</label>
           <textarea id="brief" rows={5} maxLength={1800} className={inputClass} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder={ai("design.placeholder")} />
           <p className="text-sm text-ink-soft">{ai("design.hint")}</p>
-          {brief.trim() && (
-            <button type="button" onClick={() => setBrief("")} className="self-start text-base text-maroon underline">{ai("design.clear")}</button>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" disabled={designBusy || busy || brief.trim().length < 10 || !draft.occasion} onClick={() => void generateDesign()}
+              className="rounded-lg border-2 border-maroon px-6 py-3 text-lg font-semibold text-maroon active:scale-95 disabled:opacity-50">
+              {designBusy ? ai("design.working") : draft.designHtml && draft.designBrief === brief.trim() ? ai("design.regenerate") : ai("design.generate")}
+            </button>
+            {brief.trim() && (
+              <button type="button" onClick={() => { setBrief(""); setDesignError(null); }} className="text-base text-maroon underline">{ai("design.clear")}</button>
+            )}
+          </div>
+          {designBusy && <p role="status" className="text-base text-ink-soft">{ai("design.wait")}</p>}
+          {designError && <p role="alert" className="text-lg font-medium text-red-800">{designError}</p>}
         </div>
 
       <LivePreview
           locale={locale}
           template={DEFAULT_TEMPLATE}
+          designHtml={brief.trim() ? draft.designHtml : null}
+          occasion={draft.occasion ? occasions(draft.occasion) : ""}
           title={draft.title}
           hosts={draft.hostNames}
           date={draft.date}
