@@ -770,6 +770,11 @@ export default function CreateFlow() {
           {designError && <p role="alert" className="text-lg font-medium text-red-800">{designError}</p>}
         </div>
 
+      <div className="flex flex-col gap-4">
+        <h2 className="font-display text-3xl text-maroon">{ed("heading")}</h2>
+        <RichSectionsEditor value={draft.rich} onChange={(r) => update("rich", r)} />
+      </div>
+
       <LivePreview
           locale={locale}
           template={DEFAULT_TEMPLATE}
@@ -782,11 +787,6 @@ export default function CreateFlow() {
           venue={draft.venueName}
           message={draft.message}
         />
-
-      <div className="flex flex-col gap-4">
-        <h2 className="font-display text-3xl text-maroon">{ed("heading")}</h2>
-        <RichSectionsEditor value={draft.rich} onChange={(r) => update("rich", r)} />
-      </div>
 
       {message && (
         <p role="alert" className="text-lg font-medium text-red-800">
