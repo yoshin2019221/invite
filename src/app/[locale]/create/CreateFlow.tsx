@@ -6,7 +6,6 @@ import Link from "next/link";
 import { OCCASIONS } from "@/lib/validation";
 import { compressImage } from "@/lib/image";
 import RichSectionsEditor from "@/components/invite/RichSectionsEditor";
-import LivePreview from "@/components/invite/LivePreview";
 import { EMPTY_RICH, type Rich } from "@/lib/rich";
 import { DEFAULT_TEMPLATE } from "@/lib/templates";
 import { DEFAULT_THEME, OCCASION_THEME, type ThemeId } from "@/lib/themes";
@@ -29,6 +28,23 @@ type Draft = {
   designHtml: string | null;
   designBrief: string;
 };
+
+const MAX_WORDS = 200;
+// Keeps the first 200 words; leaves spacing alone so typing feels normal.
+function clampWords(text: string, max = MAX_WORDS): string {
+  const parts = text.split(/(\s+)/);
+  let words = 0;
+  let out = "";
+  for (const p of parts) {
+    if (p && !/^\s+$/.test(p)) {
+      words += 1;
+      if (words > max) break;
+    }
+    out += p;
+  }
+  return words > max ? out.trimEnd() : out;
+}
+const countWords = (text: string) => (text.trim() ? text.trim().split(/\s+/).length : 0);
 
 const EMPTY: Draft = {
   occasion: null,
@@ -126,7 +142,7 @@ export default function CreateFlow() {
         const res = e.results[i];
         if (res.isFinal) finalChunk += res[0].transcript + " ";
       }
-      if (finalChunk) setDesc((d) => `${d ? d + " " : ""}${finalChunk.trim()}`.slice(0, 1500));
+      if (finalChunk) setDesc((d) => clampWords(`${d ? d + " " : ""}${finalChunk.trim()}`));
     };
     r.onend = () => setListening(false);
     r.onerror = (e) => {
@@ -161,7 +177,7 @@ export default function CreateFlow() {
       return;
     }
     if (qDesc) {
-      setDesc(qDesc.slice(0, 1500));
+      setDesc(clampWords(qDesc));
       if (q.get("go") === "1") setAutoDescribe(true);
       setStep("describe");
       setLoaded(true);
@@ -393,7 +409,7 @@ export default function CreateFlow() {
       setStep(qs.length ? "ask" : "details");
       // The AI always writes the design brief; the HTML itself is generated from it when the invite is created.
       const fallbackBrief = `${occ ?? "celebration"} invitation. ${desc.trim()}`.slice(0, 1800);
-      setBrief((d.designPrompt ?? "").trim() || fallbackBrief);
+      setBrief(clampWords((d.designPrompt ?? "").trim() || fallbackBrief));
       setDraft((cur) => ({ ...cur, designHtml: null, designBrief: "" }));
       setDesignError(null);
     } catch {
@@ -510,12 +526,12 @@ export default function CreateFlow() {
         <textarea
           rows={6}
           value={desc}
-          maxLength={4000}
-          onChange={(e) => setDesc(e.target.value)}
+          onChange={(e) => setDesc(clampWords(e.target.value))}
           placeholder={ai("placeholder")}
           aria-label={ai("heading")}
           className={inputClass}
         />
+        <p className="-mt-3 text-right text-sm text-ink-soft">{countWords(desc)} / {MAX_WORDS} words</p>
         {canSpeak && (
           <button type="button" onClick={speak} className={`flex items-center justify-center gap-3 rounded-lg border-2 px-6 py-4 text-xl font-semibold active:scale-95 ${listening ? "animate-pulse border-red-700 bg-red-50 text-red-800" : "border-maroon text-maroon"}`}>
             <span aria-hidden>🎤</span>{listening ? ai("micStop") : ai("speak")}
@@ -762,7 +778,8 @@ export default function CreateFlow() {
       <div className="flex flex-col gap-3 rounded-2xl border-2 border-maroon/20 bg-white/40 p-4">
           <p className="text-lg font-medium">{ai("design.heading")}</p>
           <label htmlFor="brief" className="text-base text-ink-soft">{ai("design.label")}</label>
-          <textarea id="brief" rows={5} maxLength={1800} className={inputClass} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder={ai("design.placeholder")} />
+          <textarea id="brief" rows={5} className={inputClass} value={brief} onChange={(e) => setBrief(clampWords(e.target.value))} placeholder={ai("design.placeholder")} />
+          <p className="-mt-1 text-right text-sm text-ink-soft">{countWords(brief)} / {MAX_WORDS} words</p>
           <p className="text-sm text-ink-soft">{ai("design.hint")}</p>
           <div className="flex flex-wrap items-center gap-3">
             <button type="button" disabled={designBusy || busy || brief.trim().length < 10 || !draft.occasion} onClick={() => void generateDesign()}
@@ -782,18 +799,6 @@ export default function CreateFlow() {
         <RichSectionsEditor value={draft.rich} onChange={(r) => update("rich", r)} />
       </div>
 
-      <LivePreview
-          locale={locale}
-          template={DEFAULT_TEMPLATE}
-          designHtml={brief.trim() ? draft.designHtml : null}
-          occasion={draft.occasion ? occasions(draft.occasion) : ""}
-          title={draft.title}
-          hosts={draft.hostNames}
-          date={draft.date}
-          time={draft.time}
-          venue={draft.venueName}
-          message={draft.message}
-        />
 
       {message && (
         <p role="alert" className="text-lg font-medium text-red-800">

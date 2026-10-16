@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
 
   try {
-    const draft = await extractInvite(parsed.data.text, parsed.data.image);
+    const draft = await extractInvite(parsed.data.text.split(/\s+/).slice(0, 200).join(" "), parsed.data.image);
     // Guardrail: only invitations for the supported occasions are designed here.
     if (draft.notInvite && !draft.occasion) return NextResponse.json({ error: "not_invite" }, { status: 422 });
     return NextResponse.json({ draft, questions: missingQuestions(draft) });
