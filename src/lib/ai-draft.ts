@@ -161,7 +161,17 @@ export async function extractInvite(text: string, image?: Image): Promise<Extrac
   if (!anthropicKey && !openaiKey) throw new AiUnavailable("no key");
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const prompt = `Today (India): ${today}\n\nHost's description:\n${text || "(none, see the sample image)"}${image ? "\n\nThe attached image is a sample invite whose look they like. Use it for style, and read any details printed on it." : ""}`;
-  const call = () => (openaiKey ? viaOpenAI(openaiKey, prompt, image) : viaAnthropic(anthropicKey as string, prompt, image));
+  const call = async () => {
+    if (!openaiKey) return viaAnthropic(anthropicKey as string, prompt, image);
+    try {
+      return await viaOpenAI(openaiKey, prompt, image);
+    } catch (e) {
+      // If OpenAI fails and an Anthropic key exists, try that before giving up.
+      if (!anthropicKey) throw e;
+      console.error("openai draft failed, trying anthropic", e instanceof Error ? e.message : e);
+      return viaAnthropic(anthropicKey, prompt, image);
+    }
+  };
   // The model occasionally returns no tool call; retry once before giving up.
   let input = coerceInput(await call());
   if (input == null) input = coerceInput(await call());
@@ -188,8 +198,9 @@ async function viaAnthropic(key: string, prompt: string, image?: Image): Promise
     signal: AbortSignal.timeout(25_000),
   });
   if (!res.ok) {
-    console.error("anthropic error", res.status, (await res.text().catch(() => "")).slice(0, 300));
-    throw new Error(`anthropic_${res.status}`);
+    const detail = (await res.text().catch(() => "")).slice(0, 300);
+    console.error("anthropic error", res.status, detail);
+    throw new Error(`anthropic_${res.status} ${detail}`);
   }
   const body = (await res.json()) as { content?: { type: string; input?: unknown }[] };
   return body.content?.find((b) => b.type === "tool_use")?.input;
