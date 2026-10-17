@@ -60,25 +60,31 @@ type Msg = { system: string; user: string };
 let lastStop = "";
 
 async function viaAnthropic(key: string, { system, user }: Msg): Promise<string> {
-  const call = (withTemp: boolean) =>
+  // Effort defaults to "low" (set AI_DESIGN_EFFORT to change, or "off" to omit it).
+  const effort = (process.env.AI_DESIGN_EFFORT || "low").toLowerCase();
+  const opts = { temp: true, effort: effort !== "off" };
+  const call = () =>
     fetch(`${process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"}/v1/messages`, {
       method: "POST",
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
         model: process.env.AI_DESIGN_MODEL || process.env.AI_MODEL || "claude-sonnet-5-5",
         max_tokens: 24000,
-        ...(withTemp ? { temperature: 0.7 } : {}),
+        ...(opts.temp ? { temperature: 0.7 } : {}),
+        ...(opts.effort ? { output_config: { effort } } : {}),
         system,
         messages: [{ role: "user", content: user }],
       }),
       signal: AbortSignal.timeout(285_000),
     });
-  let res = await call(true);
-  if (res.status === 400) {
-    // Some models reject a custom temperature; retry once without it.
+  let res = await call();
+  // A model may reject a tuning field; drop the one it names and retry (at most twice).
+  for (let i = 0; i < 2 && res.status === 400; i++) {
     const msg = await res.text().catch(() => "");
-    if (/temperature/i.test(msg)) res = await call(false);
+    if (opts.temp && /temperature/i.test(msg)) opts.temp = false;
+    else if (opts.effort && /effort|output_config/i.test(msg)) opts.effort = false;
     else throw new Error(`anthropic_400 ${msg.slice(0, 200)}`);
+    res = await call();
   }
   if (!res.ok) throw new Error(`anthropic_${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`);
   const body = (await res.json()) as { content?: { type: string; text?: string }[]; stop_reason?: string };
