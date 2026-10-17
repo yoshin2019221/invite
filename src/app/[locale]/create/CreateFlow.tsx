@@ -29,8 +29,8 @@ type Draft = {
   designBrief: string;
 };
 
-const MAX_WORDS = 200;
-// Keeps the first 200 words; leaves spacing alone so typing feels normal.
+const MAX_WORDS = 1000;
+// Keeps the first 1000 words; leaves spacing alone so typing feels normal.
 function clampWords(text: string, max = MAX_WORDS): string {
   const parts = text.split(/(\s+)/);
   let words = 0;

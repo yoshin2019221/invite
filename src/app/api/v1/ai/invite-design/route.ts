@@ -14,7 +14,7 @@ export const maxDuration = 300;
 // working when the host edits names, date or venue.
 
 const bodySchema = z.object({
-  designPrompt: z.string().trim().min(10).max(4000).transform((v) => v.split(/\s+/).slice(0, 200).join(" ")),
+  designPrompt: z.string().trim().min(10).max(9000).transform((v) => v.split(/\s+/).slice(0, 1000).join(" ")),
   // Guardrail: only the supported occasions get a design.
   occasion: z.enum(OCCASIONS),
   language: z.enum(["en", "hi"]).default("en"),

@@ -5,18 +5,18 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import LiveInvite from "./LiveInvite";
 
-function clamp200(text: string): string {
+function clamp1000(text: string): string {
   const parts = text.split(/(\s+)/);
   let words = 0;
   let out = "";
   for (const p of parts) {
     if (p && !/^\s+$/.test(p)) {
       words += 1;
-      if (words > 200) break;
+      if (words > 1000) break;
     }
     out += p;
   }
-  return words > 200 ? out.trimEnd() : out;
+  return words > 1000 ? out.trimEnd() : out;
 }
 
 export default function Hero() {
@@ -47,10 +47,10 @@ export default function Hero() {
             className="h-ai-box"
             rows={4}
             value={prompt}
-            onChange={(e) => setPrompt(clamp200(e.target.value))}
+            onChange={(e) => setPrompt(clamp1000(e.target.value))}
             placeholder={ai("placeholder")}
           />
-          <p className="h-ai-note" style={{ textAlign: "right" }}>{prompt.trim() ? prompt.trim().split(/\s+/).length : 0} / 200 words</p>
+          <p className="h-ai-note" style={{ textAlign: "right" }}>{prompt.trim() ? prompt.trim().split(/\s+/).length : 0} / 1000 words</p>
           <p className="h-ai-note">{ai("note")}</p>
           <button type="button" onClick={go} className="h-cta h-cta-ai">{ai("cta")}</button>
         </div>

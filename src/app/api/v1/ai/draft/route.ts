@@ -7,7 +7,7 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 export const maxDuration = 60;
 
 const bodySchema = z.object({
-  text: z.string().trim().max(5000),
+  text: z.string().trim().max(9000),
   image: z.object({ mediaType: z.enum(["image/jpeg", "image/png", "image/webp"]), data: z.string().max(2_000_000) }).optional(),
 }).refine((v) => v.text.length > 0 || v.image, { message: "empty" });
 
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
 
   try {
-    const draft = await extractInvite(parsed.data.text.split(/\s+/).slice(0, 200).join(" "), parsed.data.image);
+    const draft = await extractInvite(parsed.data.text.split(/\s+/).slice(0, 1000).join(" "), parsed.data.image);
     // Guardrail: only invitations for the supported occasions are designed here.
     if (draft.notInvite && !draft.occasion) return NextResponse.json({ error: "not_invite" }, { status: 422 });
     return NextResponse.json({ draft, questions: missingQuestions(draft) });
