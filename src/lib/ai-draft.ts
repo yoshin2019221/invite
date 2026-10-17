@@ -6,7 +6,8 @@ import { OCCASIONS } from "@/lib/validation";
 // Turns a host's free-text description (and optionally a sample invite image) into invite fields.
 // The model only fills what the host actually said; anything missing becomes a simple question.
 
-const MODEL = process.env.AI_MODEL || "claude-haiku-5-5";
+// The description step always uses Haiku (its own variable, so AI_MODEL can stay on Sonnet for the design).
+const MODEL = process.env.AI_DRAFT_MODEL || "claude-haiku-5-5";
 
 // The model output is treated leniently: a single off-format field (a stray time format, an
 // out-of-list value) must never reject the whole draft. Every field coerces to a valid value or null,
@@ -155,23 +156,15 @@ function coerceInput(v: unknown): unknown {
 }
 
 export async function extractInvite(text: string, image?: Image): Promise<Extracted> {
-  // The description is read and the design brief written by OpenAI; Anthropic is only the fallback when no OpenAI key is set.
+  // The description is read and the design brief written by Anthropic Haiku; OpenAI is used only when no Anthropic key is set.
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!anthropicKey && !openaiKey) throw new AiUnavailable("no key");
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const prompt = `Today (India): ${today}\n\nHost's description:\n${text || "(none, see the sample image)"}${image ? "\n\nThe attached image is a sample invite whose look they like. Use it for style, and read any details printed on it." : ""}`;
-  const call = async () => {
-    if (!openaiKey) return viaAnthropic(anthropicKey as string, prompt, image);
-    try {
-      return await viaOpenAI(openaiKey, prompt, image);
-    } catch (e) {
-      // If OpenAI fails and an Anthropic key exists, try that before giving up.
-      if (!anthropicKey) throw e;
-      console.error("openai draft failed, trying anthropic", e instanceof Error ? e.message : e);
-      return viaAnthropic(anthropicKey, prompt, image);
-    }
-  };
+  // Anthropic Haiku is the only model for the description when its key is set; OpenAI is used only without it.
+  const call = () => (anthropicKey ? viaAnthropic(anthropicKey, prompt, image) : viaOpenAI(openaiKey as string, prompt, image));
+
   // The model occasionally returns no tool call; retry once before giving up.
   let input = coerceInput(await call());
   if (input == null) input = coerceInput(await call());
