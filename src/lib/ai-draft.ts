@@ -155,13 +155,13 @@ function coerceInput(v: unknown): unknown {
 }
 
 export async function extractInvite(text: string, image?: Image): Promise<Extracted> {
-  // Anthropic first; if only an OpenAI key is set, use that instead. One of the two is enough.
+  // The description is read and the design brief written by OpenAI; Anthropic is only the fallback when no OpenAI key is set.
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!anthropicKey && !openaiKey) throw new AiUnavailable("no key");
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const prompt = `Today (India): ${today}\n\nHost's description:\n${text || "(none, see the sample image)"}${image ? "\n\nThe attached image is a sample invite whose look they like. Use it for style, and read any details printed on it." : ""}`;
-  const call = () => (anthropicKey ? viaAnthropic(anthropicKey, prompt, image) : viaOpenAI(openaiKey as string, prompt, image));
+  const call = () => (openaiKey ? viaOpenAI(openaiKey, prompt, image) : viaAnthropic(anthropicKey as string, prompt, image));
   // The model occasionally returns no tool call; retry once before giving up.
   let input = coerceInput(await call());
   if (input == null) input = coerceInput(await call());

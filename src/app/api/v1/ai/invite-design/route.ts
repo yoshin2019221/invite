@@ -59,19 +59,27 @@ ${REFERENCE_HTML}
 type Msg = { system: string; user: string };
 
 async function viaAnthropic(key: string, { system, user }: Msg): Promise<string> {
-  const res = await fetch(`${process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"}/v1/messages`, {
-    method: "POST",
-    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({
-      model: process.env.AI_DESIGN_MODEL || process.env.AI_MODEL || "claude-sonnet-5-5",
-      max_tokens: 12000,
-      temperature: 0.7,
-      system,
-      messages: [{ role: "user", content: user }],
-    }),
-    signal: AbortSignal.timeout(285_000),
-  });
-  if (!res.ok) throw new Error(`anthropic_${res.status}`);
+  const call = (withTemp: boolean) =>
+    fetch(`${process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com"}/v1/messages`, {
+      method: "POST",
+      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model: process.env.AI_DESIGN_MODEL || process.env.AI_MODEL || "claude-sonnet-5-5",
+        max_tokens: 12000,
+        ...(withTemp ? { temperature: 0.7 } : {}),
+        system,
+        messages: [{ role: "user", content: user }],
+      }),
+      signal: AbortSignal.timeout(285_000),
+    });
+  let res = await call(true);
+  if (res.status === 400) {
+    // Some models reject a custom temperature; retry once without it.
+    const msg = await res.text().catch(() => "");
+    if (/temperature/i.test(msg)) res = await call(false);
+    else throw new Error(`anthropic_400 ${msg.slice(0, 200)}`);
+  }
+  if (!res.ok) throw new Error(`anthropic_${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`);
   const body = (await res.json()) as { content?: { type: string; text?: string }[] };
   return body.content?.find((b) => b.type === "text")?.text ?? "";
 }
@@ -118,9 +126,19 @@ ${designPrompt}
 Write the complete invite page now.`;
 
   try {
-    const raw = anthropicKey
-      ? await viaAnthropic(anthropicKey, { system, user })
-      : await viaOpenAI(openaiKey as string, { system, user });
+    // The HTML is written by Claude (Anthropic). If that call fails and an OpenAI key exists, fall back to it.
+    let raw: string;
+    if (anthropicKey) {
+      try {
+        raw = await viaAnthropic(anthropicKey, { system, user });
+      } catch (e) {
+        console.error("anthropic design failed", e instanceof Error ? e.message : e);
+        if (!openaiKey) throw e;
+        raw = await viaOpenAI(openaiKey, { system, user });
+      }
+    } else {
+      raw = await viaOpenAI(openaiKey as string, { system, user });
+    }
     // Keep the colour hint: sanitising removes <meta> tags, so it is re-attached after cleaning.
     const hint = raw.match(/<meta[^>]*name\s*=\s*["']invite-colors["'][^>]*>/i)?.[0] ?? "";
     const html = sanitizeDesignHtml(raw);
