@@ -81,7 +81,12 @@
       "micNone": "Didn't catch that. Tap the mic and speak clearly.",
       "micFailed": "Voice input isn't working in this browser. Please type instead, or use Chrome."
     },
-    "useThis": "Use this design"
+    "useThis": "Use this design",
+    "nav": {
+      "how": "How it works",
+      "demo": "Try a reply",
+      "privacy": "Privacy"
+    }
   },
   "Language": {
     "switchTo": "हिन्दी",

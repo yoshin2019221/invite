@@ -18,25 +18,32 @@ export default function HomePage({ params }: { params: Promise<{ locale: string 
   const demo = useTranslations("Home.demo");
   const lang = useTranslations("Language");
   const other: Locale = locale === "en" ? "hi" : "en";
+  const nav = useTranslations("Home.nav");
 
   return (
     <div className="home">
-      <section className="h-hero">
-        <div className="h-torana" aria-hidden />
-        <header className="h-top">
-          <span className="h-brand">{brand("name")}</span>
-          <div className="h-top-r">
+      <header className="nav">
+        <div className="nav-in">
+          <Link href={`/${locale}`} className="h-brand">{brand("name")}</Link>
+          <nav className="nav-links" aria-label="Main">
+            <a href="#how">{nav("how")}</a>
+            <a href="#try">{nav("demo")}</a>
+            <Link href={`/${locale}/privacy`}>{nav("privacy")}</Link>
+          </nav>
+          <div className="nav-r">
             <TextSize />
             <Link href={`/${other}`} hrefLang={other} aria-label={lang("label")} className="h-lang">
               {lang("switchTo")}
             </Link>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <section className="h-hero">
         <Hero />
       </section>
 
-      <section className="h-sec h-steps">
+      <section className="h-sec h-steps" id="how">
         <h2 className="h-h2">{t("stepsHeading")}</h2>
         <ol className="h-steplist">
           {(["s1", "s2", "s3"] as const).map((k, i) => (
@@ -50,7 +57,7 @@ export default function HomePage({ params }: { params: Promise<{ locale: string 
 
       </section>
 
-      <section className="h-sec">
+      <section className="h-sec" id="try">
         <h2 className="h-h2">{demo("title")}</h2>
         <p className="h-p">{demo("sub")}</p>
         <RsvpDemo />
