@@ -57,6 +57,7 @@ ${REFERENCE_HTML}
 </reference>`;
 
 type Msg = { system: string; user: string };
+let lastStop = "";
 
 async function viaAnthropic(key: string, { system, user }: Msg): Promise<string> {
   const call = (withTemp: boolean) =>
@@ -65,7 +66,7 @@ async function viaAnthropic(key: string, { system, user }: Msg): Promise<string>
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
         model: process.env.AI_DESIGN_MODEL || process.env.AI_MODEL || "claude-sonnet-5-5",
-        max_tokens: 12000,
+        max_tokens: 24000,
         ...(withTemp ? { temperature: 0.7 } : {}),
         system,
         messages: [{ role: "user", content: user }],
@@ -80,7 +81,8 @@ async function viaAnthropic(key: string, { system, user }: Msg): Promise<string>
     else throw new Error(`anthropic_400 ${msg.slice(0, 200)}`);
   }
   if (!res.ok) throw new Error(`anthropic_${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`);
-  const body = (await res.json()) as { content?: { type: string; text?: string }[] };
+  const body = (await res.json()) as { content?: { type: string; text?: string }[]; stop_reason?: string };
+  lastStop = body.stop_reason ?? "";
   return body.content?.find((b) => b.type === "text")?.text ?? "";
 }
 
@@ -143,8 +145,9 @@ Write the complete invite page now.`;
     const hint = raw.match(/<meta[^>]*name\s*=\s*["']invite-colors["'][^>]*>/i)?.[0] ?? "";
     const html = sanitizeDesignHtml(raw);
     if (!looksLikeDesign(html)) {
-      console.error("invite-design: unusable output", raw.length, html.length);
-      return NextResponse.json({ error: "ai_failed", code: "unusable_output" }, { status: 502 });
+      const why = `raw=${raw.length} clean=${html.length} stop=${lastStop} title=${html.includes("{{title}}")}`;
+      console.error("invite-design: unusable output", why, raw.slice(0, 300));
+      return NextResponse.json({ error: "ai_failed", code: `unusable_output ${why}` }, { status: 502 });
     }
     return NextResponse.json({ html: `${hint}${html}` });
   } catch (e) {

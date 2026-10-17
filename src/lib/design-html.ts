@@ -59,7 +59,7 @@ export function sanitizeDesignHtml(input: string): string {
 
 // A usable design has real markup and a visible text placeholder from the host.
 export function looksLikeDesign(html: string): boolean {
-  return html.length >= 400 && /<(main|div|section|article)\b/i.test(html) && html.includes("{{title}}");
+  return html.length >= 400 && /<(main|div|section|article)\b/i.test(html) && /\{\{(title|hosts|occasion)\}\}/.test(html);
 }
 
 // ---------- palette for the native sections under the frame ----------
