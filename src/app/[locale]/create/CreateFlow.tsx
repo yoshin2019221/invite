@@ -248,7 +248,7 @@ export default function CreateFlow() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ designPrompt: b, occasion: draft.occasion, language: locale }),
-        signal: AbortSignal.timeout(595_000),
+        signal: AbortSignal.timeout(295_000),
       });
       if (r.status === 429) { fail(ai("errors.busy")); return null; }
       const raw = await r.text().catch(() => "");
