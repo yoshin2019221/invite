@@ -251,12 +251,17 @@ export default function CreateFlow() {
         signal: AbortSignal.timeout(295_000),
       });
       if (r.status === 429) { fail(ai("errors.busy")); return null; }
-      const d = r.ok ? ((await r.json()) as { html?: string }) : null;
-      if (!d?.html) { fail(ai("design.createFailed")); return null; }
+      const raw = await r.text().catch(() => "");
+      let d: { html?: string; code?: string } | null = null;
+      try { d = JSON.parse(raw); } catch { /* not JSON, e.g. a platform timeout page */ }
+      if (!r.ok || !d?.html) {
+        fail(`${ai("design.createFailed")} (Technical note: ${r.status} ${d?.code ?? raw.slice(0, 80)})`);
+        return null;
+      }
       setDraft((cur) => ({ ...cur, designHtml: d.html ?? null, designBrief: b }));
       return d.html;
-    } catch {
-      fail(ai("design.createFailed"));
+    } catch (e) {
+      fail(`${ai("design.createFailed")} (Technical note: ${e instanceof Error ? e.name + " " + e.message : "network"})`);
       return null;
     } finally {
       setDesignBusy(false);
