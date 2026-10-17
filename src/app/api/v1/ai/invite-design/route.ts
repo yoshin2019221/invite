@@ -7,7 +7,7 @@ import { openaiChat } from "@/lib/openai-model";
 import { REFERENCE_HTML } from "@/lib/design-reference";
 
 // Writing a full page takes a while. With Fluid compute (on by default) Vercel allows up to 300 s, even on Hobby.
-export const maxDuration = 300;
+export const maxDuration = 600;
 
 // AI design: turns the design brief (which the AI itself wrote from the host's description) into one
 // complete, self-contained, animated HTML invite. Details are placeholders, so the same design keeps
@@ -71,7 +71,7 @@ async function viaAnthropic(key: string, { system, user }: Msg): Promise<string>
         system,
         messages: [{ role: "user", content: user }],
       }),
-      signal: AbortSignal.timeout(285_000),
+      signal: AbortSignal.timeout(585_000),
     });
   let res = await call(true);
   if (res.status === 400) {
@@ -98,7 +98,7 @@ async function viaOpenAI(key: string, { system, user }: Msg): Promise<string> {
         { role: "user", content: user },
       ],
     },
-    { effort: process.env.OPENAI_DESIGN_EFFORT || "low", timeoutMs: 285_000 },
+    { effort: process.env.OPENAI_DESIGN_EFFORT || "low", timeoutMs: 585_000 },
   );
   return body.choices?.[0]?.message?.content ?? "";
 }

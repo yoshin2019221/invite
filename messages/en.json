@@ -427,7 +427,7 @@
       "createFailed": "The AI could not finish your design this time, so nothing was created. Tap \"Design it with AI\" to try again.",
       "generate": "Design it with AI",
       "regenerate": "Design again",
-      "wait": "The AI is designing your invite. This can take up to two minutes. Please keep this page open."
+      "wait": "The AI is designing your invite. This can take a few minutes. Please keep this page open."
     }
   },
   "Card": {
